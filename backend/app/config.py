@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
-    jwt_expiration_minutes: int = 60
+    jwt_expiration_minutes: int = 1440
 
     s3_bucket: str = "ats-ai-uploads"
     s3_region: str = "us-east-1"

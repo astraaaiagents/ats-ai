@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
@@ -10,6 +10,14 @@ from app.config import settings
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
+
+
+api_router = APIRouter(prefix="/api/v1")
+
+
+@api_router.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 def create_app() -> FastAPI:
@@ -27,9 +35,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.get("/health")
-    async def health() -> dict[str, str]:
-        return {"status": "ok"}
+    app.include_router(api_router)
 
     return app
 
