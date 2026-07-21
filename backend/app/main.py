@@ -9,6 +9,10 @@ from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import close_redis_client
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.tenant import TenantMiddleware
+from app.routes.auth import auth_router
+from app.routes.client_contacts import client_contacts_router
+from app.routes.organizations import organizations_router
+from app.routes.users import users_router
 
 
 @asynccontextmanager
@@ -23,6 +27,11 @@ api_router = APIRouter(prefix="/api/v1")
 @api_router.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+api_router.include_router(auth_router)
+api_router.include_router(organizations_router)
+api_router.include_router(users_router)
+api_router.include_router(client_contacts_router)
 
 
 def create_app() -> FastAPI:
