@@ -57,7 +57,8 @@ async def bootstrap() -> None:
             password_hash_value = hash_password(password)
             admin_id = uuid.uuid4()
             now = datetime.now(tz=timezone.utc)
-            email = f"admin@{('default-' + org_id.hex[:8] if org is None else 'org')}.ats"
+            domain = f"default-{org_id.hex[:8]}" if org is None else "org"
+            email = f"admin@{domain}.ats"
             await session.execute(
                 text(
                     "INSERT INTO users (id, email, password_hash, role, organization_id, is_active, token_version, created_at, updated_at) "

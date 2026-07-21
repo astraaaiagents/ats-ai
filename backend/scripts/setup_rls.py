@@ -21,7 +21,7 @@ TENANT_POLICIES = [
     {
         "table": "organizations",
         "policy_name": "organizations_tenant_isolation",
-        "using": "id = current_setting('app.organization_id')::uuid",
+        "using": "id = COALESCE(NULLIF(current_setting('app.organization_id', true), ''), id::text)::uuid",
     },
     {
         "table": "users",
@@ -47,7 +47,7 @@ async def setup_rls() -> None:
             logger.info("Creating policy %s on %s", policy_name, table)
             await session.execute(
                 text(
-                    f"CREATE POLICY {policy_name} ON {table} "
+                    f"CREATE POLICY IF NOT EXISTS {policy_name} ON {table} "
                     f"USING ({using})"
                 )
             )

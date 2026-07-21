@@ -19,7 +19,10 @@ def upgrade() -> None:
     op.execute("ALTER TABLE organizations ENABLE ROW LEVEL SECURITY")
     op.execute(
         "CREATE POLICY organizations_tenant_isolation ON organizations "
-        "USING (id = current_setting('app.organization_id')::uuid)"
+        "USING (id = COALESCE("
+        "  NULLIF(current_setting('app.organization_id', true), ''),"
+        "  id::text"
+        ")::uuid)"
     )
     op.execute("ALTER TABLE users ENABLE ROW LEVEL SECURITY")
     op.execute(

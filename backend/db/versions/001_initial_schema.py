@@ -47,6 +47,7 @@ def upgrade() -> None:
     op.create_table(
         "token_blacklist",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column("is_active", sa.Boolean, server_default=sa.text("true"), nullable=False),
         sa.Column("jti", sa.String(255), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("revoked_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
