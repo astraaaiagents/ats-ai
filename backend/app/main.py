@@ -6,12 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.middleware.error_handler import register_error_handlers
+from app.middleware.rate_limit import close_redis_client
 from app.middleware.request_id import RequestIDMiddleware
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
+    await close_redis_client()
 
 
 api_router = APIRouter(prefix="/api/v1")

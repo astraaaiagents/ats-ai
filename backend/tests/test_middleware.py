@@ -199,7 +199,7 @@ class TestPagination:
             r = await client.get("/test/paginate-defaults")
             body = r.json()
             assert body["cursor"] is None
-            assert body["limit"] == 20
+            assert body["limit"] == 25
             assert body["sort"] is None
 
     @pytest.mark.anyio
@@ -217,16 +217,15 @@ class TestPagination:
 
 
 class TestRateLimit:
-    def _mock_redis(self, execute_result: list | None = None, side_effect: Exception | None = None):
+    def _mock_redis(self, zcard_return: int = 0):
         from unittest.mock import Mock
 
         redis_mock = AsyncMock()
+        redis_mock.zremrangebyscore = AsyncMock(return_value=0)
+        redis_mock.zcard = AsyncMock(return_value=zcard_return)
         pipeline_mock = Mock()
-        if side_effect:
-            redis_mock.pipeline = AsyncMock(side_effect=side_effect)
-        else:
-            redis_mock.pipeline = AsyncMock(return_value=pipeline_mock)
-            pipeline_mock.execute = AsyncMock(return_value=execute_result or [0, 5, 1, 1])
+        pipeline_mock.execute = AsyncMock()
+        redis_mock.pipeline = AsyncMock(return_value=pipeline_mock)
         return redis_mock
 
     @pytest.mark.anyio
@@ -239,7 +238,7 @@ class TestRateLimit:
             return {"status": "ok"}
 
         with patch("app.middleware.rate_limit.get_redis_client") as mock_get:
-            mock_get.return_value = self._mock_redis([0, 5, 1, 1])
+            mock_get.return_value = self._mock_redis(zcard_return=5)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 r = await client.get("/test/rate-limited")
                 assert r.status_code == 200
@@ -254,7 +253,7 @@ class TestRateLimit:
             return {"status": "ok"}
 
         with patch("app.middleware.rate_limit.get_redis_client") as mock_get:
-            mock_get.return_value = self._mock_redis([0, 1000, 1, 1])
+            mock_get.return_value = self._mock_redis(zcard_return=1000)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 r = await client.get("/test/rate-limited-block")
                 assert r.status_code == 429
@@ -270,7 +269,7 @@ class TestRateLimit:
             return {"status": "ok"}
 
         with patch("app.middleware.rate_limit._check_sliding_window") as mock_check:
-            mock_check.return_value = True
+            mock_check.return_value = (True, 0)
 
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 r = await client.get(
@@ -290,7 +289,7 @@ class TestRateLimit:
             return {"status": "ok"}
 
         with patch("app.middleware.rate_limit._check_sliding_window") as mock_check:
-            mock_check.return_value = True
+            mock_check.return_value = (True, 0)
 
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 r = await client.get("/test/rate-limit-default")
@@ -311,8 +310,8 @@ class TestRateLimit:
             def side_effect(redis, key, max_requests, window_seconds):
                 call_index[0] += 1
                 if call_index[0] == 1:
-                    return False
-                return True
+                    return (False, 50)
+                return (True, 0)
 
             mock_check.side_effect = side_effect
 

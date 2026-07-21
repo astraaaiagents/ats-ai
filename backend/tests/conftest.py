@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -23,7 +23,10 @@ async def client(app) -> AsyncGenerator[AsyncClient, None]:
 def mock_redis():
     with patch("app.middleware.rate_limit.get_redis_client") as mock:
         redis_instance = AsyncMock()
-        redis_instance.pipeline.return_value = redis_instance
-        redis_instance.execute.return_value = [0, 0, 1, 1]
+        redis_instance.zremrangebyscore = AsyncMock(return_value=0)
+        redis_instance.zcard = AsyncMock(return_value=0)
+        pipeline_mock = Mock()
+        pipeline_mock.execute = AsyncMock()
+        redis_instance.pipeline = AsyncMock(return_value=pipeline_mock)
         mock.return_value = redis_instance
         yield mock

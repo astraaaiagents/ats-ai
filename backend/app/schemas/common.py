@@ -21,6 +21,7 @@ class PaginationInfo(BaseModel):
     next_cursor: str | None
     has_more: bool
     total: int
+    sort: str | None = None
 
 
 class PaginatedResponse(BaseModel):
