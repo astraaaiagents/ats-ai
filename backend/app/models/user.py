@@ -16,7 +16,8 @@ class User(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+        String(255), nullable=False, index=True
+        # soft-delete re-use requires UNIQUE only for active users via partial index
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
@@ -40,6 +41,7 @@ class User(Base):
     __table_args__ = (
         Index(
             "ix_users_active_email",
+            "organization_id",
             "email",
             unique=True,
             postgresql_where=text("is_active = true"),

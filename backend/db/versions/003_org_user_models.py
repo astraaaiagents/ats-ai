@@ -18,6 +18,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Fix ix_users_active_email to include organization_id
+    op.drop_index("ix_users_active_email", table_name="users")
+    op.create_index(
+        "ix_users_active_email",
+        "users",
+        ["organization_id", "email"],
+        unique=True,
+        postgresql_where=sa.text("is_active = true"),
+    )
     op.add_column(
         "organizations",
         sa.Column("kms_key_id", sa.String(255), nullable=True),
@@ -135,6 +144,15 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Restore ix_users_active_email to original columns
+    op.drop_index("ix_users_active_email", table_name="users")
+    op.create_index(
+        "ix_users_active_email",
+        "users",
+        ["email"],
+        unique=True,
+        postgresql_where=sa.text("is_active = true"),
+    )
     op.drop_index(op.f("ix_platform_users_email"), table_name="platform_users")
     op.drop_table("platform_users")
     op.drop_table("audit_logs")
