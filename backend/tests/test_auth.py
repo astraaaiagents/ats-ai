@@ -15,10 +15,12 @@ from app.middleware.error_handler import AppException
 
 
 def _make_session_override(user):
-    mock_result = Mock()
-    mock_result.scalar_one_or_none.return_value = user
+    mock_blacklist_result = Mock()
+    mock_blacklist_result.scalar_one_or_none.return_value = None
+    mock_user_result = Mock()
+    mock_user_result.scalar_one_or_none.return_value = user
     mock_session = AsyncMock()
-    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.execute = AsyncMock(side_effect=[mock_blacklist_result, mock_user_result])
 
     async def get_override():
         return mock_session

@@ -2,9 +2,12 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from jose import ExpiredSignatureError, JWTError, jwt
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.middleware.error_handler import AppException
+from app.models.blacklist import TokenBlacklist
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -61,3 +64,13 @@ def verify_token(token: str, expected_type: str = "access") -> dict:
         )
 
     return payload
+
+
+async def is_token_blacklisted(jti: str, db: AsyncSession) -> bool:
+    result = await db.execute(
+        select(TokenBlacklist).where(
+            TokenBlacklist.jti == jti,
+            TokenBlacklist.expires_at > func.now(),
+        )
+    )
+    return result.scalar_one_or_none() is not None

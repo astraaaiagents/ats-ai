@@ -7,7 +7,7 @@ from app.database import get_session
 from app.middleware.error_handler import AppException
 from app.models.user import User
 
-from .jwt import verify_token
+from .jwt import is_token_blacklisted, verify_token
 
 security = HTTPBearer()
 
@@ -17,6 +17,13 @@ async def get_current_user(
     db: AsyncSession = Depends(get_session),
 ) -> User:
     payload = verify_token(credentials.credentials, expected_type="access")
+    jti = payload.get("jti")
+    if jti and await is_token_blacklisted(jti, db):
+        raise AppException(
+            code="TOKEN_REVOKED",
+            message="Token has been revoked",
+            status_code=401,
+        )
     user_id = payload.get("sub")
     if not user_id:
         raise AppException(
