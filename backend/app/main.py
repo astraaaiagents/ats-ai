@@ -5,6 +5,8 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.middleware.error_handler import register_error_handlers
+from app.middleware.request_id import RequestIDMiddleware
 
 
 @asynccontextmanager
@@ -34,6 +36,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.add_middleware(RequestIDMiddleware)
+
+    register_error_handlers(app)
 
     app.include_router(api_router)
 

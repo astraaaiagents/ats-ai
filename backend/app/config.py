@@ -25,5 +25,9 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["*"]
 
+    rate_limit_tenant_per_minute: int = 1000
+    rate_limit_user_per_minute: int = 200
+    rate_limit_burst_per_second: int = 50
+
 
 settings = Settings()
