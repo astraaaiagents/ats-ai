@@ -28,11 +28,12 @@ class TestMigrationsImport:
         assert len(heads) == 1
 
         revisions = list(script.walk_revisions())
-        assert len(revisions) == 2
+        assert len(revisions) == 3
 
         revisions_by_id = {r.revision: r for r in revisions}
         assert "001_initial_schema" in revisions_by_id
         assert "002_rls_policies" in revisions_by_id
+        assert "003_org_user_models" in revisions_by_id
 
     def test_initial_schema_attributes(self):
         from alembic.config import Config
