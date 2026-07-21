@@ -57,9 +57,24 @@ async def rate_limiter(
     tenant_id: str = Depends(get_tenant_id),
     user_id: str = Depends(get_user_id),
 ) -> None:
+    now_ts = int(time.time())
+    reset_ts = now_ts + 60
+
+    def _set_rate_limit_headers(remaining_count: int | None = None) -> None:
+        headers = {
+            "X-RateLimit-Limit": str(settings.rate_limit_user_per_minute),
+            "X-RateLimit-Reset": str(reset_ts),
+            "X-RateLimit-Remaining": str(
+                remaining_count if remaining_count is not None else settings.rate_limit_user_per_minute
+            ),
+        }
+        response.headers.update(headers)
+        request.state.rate_limit_headers = headers
+
     try:
         redis = await get_redis_client()
     except (ConnectionError, OSError) as e:
+        _set_rate_limit_headers()
         raise AppException(
             code="RATE_LIMIT_SERVICE_UNAVAILABLE",
             message="Rate limiting service unavailable",
@@ -69,6 +84,7 @@ async def rate_limiter(
     burst_key = f"rate:burst:{user_id}"
     burst_allowed, _ = await _check_sliding_window(redis, burst_key, settings.rate_limit_burst_per_second, 1)
     if not burst_allowed:
+        _set_rate_limit_headers()
         raise AppException(
             code="RATE_LIMIT_EXCEEDED",
             message="Too many requests - burst limit exceeded",
@@ -78,6 +94,7 @@ async def rate_limiter(
     user_key = f"rate:user:{user_id}"
     user_allowed, user_count = await _check_sliding_window(redis, user_key, settings.rate_limit_user_per_minute, 60)
     if not user_allowed:
+        _set_rate_limit_headers(int(user_count))
         raise AppException(
             code="RATE_LIMIT_EXCEEDED",
             message="Too many requests - user rate limit exceeded",
@@ -87,6 +104,7 @@ async def rate_limiter(
     tenant_key = f"rate:tenant:{tenant_id}"
     tenant_allowed, _ = await _check_sliding_window(redis, tenant_key, settings.rate_limit_tenant_per_minute, 60)
     if not tenant_allowed:
+        _set_rate_limit_headers()
         raise AppException(
             code="RATE_LIMIT_EXCEEDED",
             message="Too many requests - tenant rate limit exceeded",
@@ -94,6 +112,4 @@ async def rate_limiter(
         )
 
     remaining = max(0, settings.rate_limit_user_per_minute - user_count)
-    response.headers["X-RateLimit-Limit"] = str(settings.rate_limit_user_per_minute)
-    response.headers["X-RateLimit-Remaining"] = str(remaining)
-    response.headers["X-RateLimit-Reset"] = str(int(time.time() + 60))
+    _set_rate_limit_headers(remaining)
