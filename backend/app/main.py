@@ -8,6 +8,7 @@ from app.config import settings
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import close_redis_client
 from app.middleware.request_id import RequestIDMiddleware
+from app.middleware.tenant import TenantMiddleware
 
 
 @asynccontextmanager
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     )
 
     app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(TenantMiddleware)
 
     register_error_handlers(app)
 
