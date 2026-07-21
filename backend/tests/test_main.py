@@ -1,0 +1,26 @@
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from app.main import create_app
+
+
+@pytest.fixture
+def app():
+    return create_app()
+
+
+@pytest.mark.anyio
+async def test_health_endpoint(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+@pytest.mark.anyio
+async def test_app_factory_returns_asgi_app(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/docs")
+    assert response.status_code == 200
