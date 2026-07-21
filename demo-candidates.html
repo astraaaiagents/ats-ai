@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgencyOS — Candidates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-sidebar: #0F172A;
+  --color-bg: #F8F6F3;
+  --color-card: #FFFFFF;
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-ai: #D97706;
+  --color-ai-bg: #FEF3C7;
+  --color-success: #059669;
+  --color-success-bg: #ECFDF5;
+  --color-text: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
+  --color-border: #E5E7EB;
+  --color-sidebar-text: #94A3B8;
+  --color-sidebar-hover: #1E293B;
+  --color-sidebar-active: #FFFFFF;
+  --color-danger: #DC2626;
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -1px rgba(0,0,0,.04);
+  --sidebar-width: 240px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width);
+  background: var(--color-sidebar); display: flex; flex-direction: column;
+  z-index: 40; overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 20px 24px; border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.sidebar-logo {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--color-primary), #818CF8);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 800; font-size: 16px;
+  color: #fff; flex-shrink: 0;
+}
+
+.sidebar-brand-name {
+  font-family: var(--font-heading); font-weight: 700; font-size: 18px;
+  color: #fff; letter-spacing: -.02em;
+}
+
+.sidebar-brand-name span { color: var(--color-ai); }
+
+.sidebar-nav { padding: 12px 10px; flex: 1; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius);
+  color: var(--color-sidebar-text); text-decoration: none;
+  font-size: 14px; font-weight: 500; transition: all .15s;
+  cursor: default; position: relative;
+}
+
+.nav-item:hover { background: var(--color-sidebar-hover); color: #CBD5E1; }
+.nav-item.active { background: rgba(79,70,229,.15); color: var(--color-sidebar-active); }
+.nav-item.active::before {
+  content: ''; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; border-radius: 0 3px 3px 0; background: var(--color-primary);
+}
+
+.nav-item svg { width: 20px; height: 20px; flex-shrink: 0; opacity: .7; }
+.nav-item.active svg { opacity: 1; }
+
+.nav-section-label {
+  padding: 20px 12px 6px; font-size: 11px; font-weight: 600;
+  color: rgba(148,163,184,.4); text-transform: uppercase; letter-spacing: .08em;
+}
+
+.sidebar-footer {
+  padding: 16px; border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.trial-badge {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--radius);
+  background: rgba(217,119,6,.12); color: var(--color-ai);
+  font-size: 12px; font-weight: 600;
+}
+
+.trial-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Main */
+.main { margin-left: var(--sidebar-width); flex: 1; min-width: 0; }
+
+/* Top Bar */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 28px; background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.demo-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px;
+  background: var(--color-ai-bg); color: var(--color-ai);
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.demo-chip svg { width: 12px; height: 12px; }
+
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: var(--radius);
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  color: var(--color-text-muted); font-size: 14px;
+  min-width: 280px;
+}
+
+.search-bar svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .5; }
+
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+
+.notif-btn {
+  position: relative; width: 38px; height: 38px; border-radius: var(--radius);
+  border: 1px solid var(--color-border); background: var(--color-card);
+  display: flex; align-items: center; justify-content: center; cursor: default;
+}
+
+.notif-btn svg { width: 18px; height: 18px; color: var(--color-text-secondary); }
+
+.notif-badge {
+  position: absolute; top: -3px; right: -3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--color-danger); color: #fff;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.user-avatar {
+  width: 36px; height: 36px; border-radius: var(--radius);
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: var(--font-heading);
+  font-weight: 700; font-size: 13px; cursor: default;
+}
+
+/* Page Header */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 28px 0;
+}
+
+.page-title {
+  font-family: var(--font-heading); font-size: 24px; font-weight: 800;
+  color: var(--color-text); letter-spacing: -.03em;
+}
+
+.page-title span { color: var(--color-text-muted); font-weight: 400; font-size: 16px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  border: 1px solid var(--color-border); background: var(--color-card);
+  color: var(--color-text-secondary); cursor: default;
+  transition: all .15s;
+}
+
+.btn:hover { background: var(--color-bg); }
+.btn-primary {
+  background: var(--color-primary); color: #fff; border-color: var(--color-primary);
+}
+.btn-primary:hover { background: var(--color-primary-hover); }
+
+/* Filters */
+.filters {
+  display: flex; align-items: center; gap: 8px;
+  padding: 16px 28px 0; flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 100px;
+  border: 1px solid var(--color-border); background: var(--color-card);
+  font-size: 12px; font-weight: 500; color: var(--color-text-secondary);
+  cursor: default;
+}
+
+.filter-chip.active {
+  background: var(--color-primary); color: #fff; border-color: var(--color-primary);
+}
+
+.filter-chip svg { width: 14px; height: 14px; opacity: .5; }
+.filter-chip.active svg { opacity: 1; }
+.filter-divider { width: 1px; height: 24px; background: var(--color-border); }
+
+/* Candidate Grid */
+.candidates-section {
+  display: flex; gap: 0;
+}
+
+.candidate-grid {
+  flex: 1; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px; padding: 20px 28px; align-content: start;
+}
+
+/* Candidate Card (list variant) */
+.candidate-card {
+  background: var(--color-card); border-radius: var(--radius);
+  border: 1px solid var(--color-border); padding: 16px;
+  animation: cardFadeIn .4s ease both;
+  transition: all .2s; cursor: default;
+}
+
+.candidate-card:nth-child(1) { animation-delay: .03s; }
+.candidate-card:nth-child(2) { animation-delay: .06s; }
+.candidate-card:nth-child(3) { animation-delay: .09s; }
+.candidate-card:nth-child(4) { animation-delay: .12s; }
+.candidate-card:nth-child(5) { animation-delay: .15s; }
+.candidate-card:nth-child(6) { animation-delay: .18s; }
+.candidate-card:nth-child(7) { animation-delay: .21s; }
+.candidate-card:nth-child(8) { animation-delay: .24s; }
+
+.candidate-card:hover {
+  box-shadow: var(--shadow-md); border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.card-row { display: flex; align-items: flex-start; gap: 12px; }
+
+.card-avatar {
+  width: 42px; height: 42px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 700; font-size: 14px;
+  color: #fff; flex-shrink: 0;
+}
+
+.card-body { flex: 1; min-width: 0; }
+
+.card-name {
+  font-family: var(--font-heading); font-size: 14px; font-weight: 700;
+  color: var(--color-text); display: flex; align-items: center; gap: 8px;
+}
+
+.card-name .ai-badge-compact {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 100px;
+  background: var(--color-ai-bg); color: var(--color-ai);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  border: 1px solid rgba(217,119,6,.2);
+}
+
+.card-name .ai-badge-compact.high { background: var(--color-success-bg); color: var(--color-success); border-color: rgba(5,150,105,.2); }
+
+.card-role {
+  font-size: 12px; color: var(--color-text-muted); display: block;
+  margin-top: 1px;
+}
+
+.card-summary {
+  font-size: 12px; color: var(--color-text-secondary); line-height: 1.6;
+  margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-sm);
+  background: var(--color-bg); border-left: 2px solid var(--color-ai);
+}
+
+.card-tags {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px;
+}
+
+.card-tag {
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  font-size: 11px; color: var(--color-text-secondary);
+}
+
+.card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-border);
+}
+
+.card-source {
+  font-size: 11px; color: var(--color-text-muted); display: flex; align-items: center; gap: 4px;
+}
+
+.card-source svg { width: 12px; height: 12px; opacity: .5; }
+
+.card-date {
+  font-size: 11px; color: var(--color-text-muted);
+}
+
+/* Candidate Detail Panel */
+.candidate-panel {
+  width: 420px; flex-shrink: 0;
+  background: var(--color-card); border-left: 1px solid var(--color-border);
+  display: flex; flex-direction: column; max-height: calc(100vh - 60px);
+  position: sticky; top: 0;
+  animation: panelSlideIn .35s ease both;
+}
+
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--color-border);
+}
+
+.panel-header-left { display: flex; align-items: center; gap: 14px; }
+
+.panel-header-avatar {
+  width: 48px; height: 48px; border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 700; font-size: 16px;
+  color: #fff; flex-shrink: 0;
+}
+
+.panel-header-info {}
+
+.panel-name {
+  font-family: var(--font-heading); font-size: 18px; font-weight: 700;
+}
+
+.panel-role {
+  font-size: 13px; color: var(--color-text-muted);
+}
+
+.panel-close {
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border); background: var(--color-card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: default; font-size: 18px; line-height: 1; color: var(--color-text-muted);
+}
+
+.panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+.section-title {
+  font-family: var(--font-heading); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--color-text-muted); margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--color-border);
+}
+
+.ai-summary-box {
+  padding: 14px; border-radius: var(--radius);
+  background: var(--color-bg); border-left: 3px solid var(--color-ai);
+  font-size: 13px; line-height: 1.7; color: var(--color-text-secondary);
+  margin-bottom: 20px;
+}
+
+.ai-disclosure {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 11px; color: var(--color-text-muted); margin-top: 8px;
+}
+
+.ai-disclosure svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.skills-section {
+  margin-bottom: 20px;
+}
+
+.skill-list {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+
+.panel-skill {
+  padding: 4px 10px; border-radius: 6px;
+  font-size: 12px; font-weight: 500;
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.panel-skill.top { background: #EEF2FF; border-color: #C7D2FE; color: var(--color-primary); }
+
+.info-rows { margin-bottom: 20px; }
+
+.info-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 8px 0; border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+}
+
+.info-row:last-child { border: none; }
+
+.info-label {
+  width: 90px; flex-shrink: 0; color: var(--color-text-muted); font-size: 12px;
+}
+
+.info-value { color: var(--color-text-secondary); }
+
+.info-status {
+  display: inline-flex; padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 600;
+}
+
+.info-status.sourced { background: #DBEAFE; color: #1D4ED8; }
+.info-status.review { background: #FEF3C7; color: #92400E; }
+.info-status.submitted { background: #ECFDF5; color: #065F46; }
+
+.doc-list {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px;
+}
+
+.doc-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  font-size: 13px; color: var(--color-text-secondary);
+}
+
+.doc-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .6; }
+
+.doc-name { flex: 1; }
+.doc-size { font-size: 11px; color: var(--color-text-muted); }
+
+.timeline { margin-bottom: 20px; }
+
+.timeline-item {
+  display: flex; gap: 12px; padding-bottom: 16px;
+  position: relative;
+}
+
+.timeline-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 9px; top: 20px; bottom: 0;
+  width: 2px; background: var(--color-border);
+}
+
+.timeline-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--color-border); flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.timeline-dot.active { background: var(--color-primary); }
+.timeline-dot.success { background: var(--color-success); }
+
+.timeline-content { flex: 1; }
+
+.timeline-title {
+  font-size: 13px; font-weight: 600; color: var(--color-text);
+}
+
+.timeline-sub {
+  font-size: 12px; color: var(--color-text-muted); margin-top: 2px;
+}
+
+/* Animations */
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes panelSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candidate-card, .candidate-panel { animation: none; }
+  .candidate-card:hover { transform: none; }
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .candidate-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .candidate-panel { width: 360px; }
+}
+
+@media (max-width: 820px) {
+  :root { --sidebar-width: 60px; }
+  .sidebar-brand-name, .nav-item span, .nav-section-label,
+  .sidebar-footer .trial-badge span { display: none; }
+  .sidebar-brand { justify-content: center; padding: 16px; }
+  .nav-item { justify-content: center; padding: 12px; }
+  .nav-item.active::before { display: none; }
+  .sidebar-footer { padding: 10px; }
+  .trial-badge { justify-content: center; }
+  .main { margin-left: 60px; }
+  .candidates-section { flex-direction: column; }
+  .candidate-panel { width: 100%; border-left: none; border-top: 1px solid var(--color-border); position: static; max-height: none; }
+}
+
+@media (max-width: 640px) {
+  .topbar { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+  .search-bar { min-width: 0; flex: 1; }
+  .page-header { padding: 16px 16px 0; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .filters { padding: 12px 16px 0; }
+  .candidate-grid { padding: 14px; grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a href="index.html" style="text-decoration:none;color:inherit;display:block;">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">A</div>
+    <span class="sidebar-brand-name">Agency<span>OS</span></span>
+  </div>
+  </a>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="demo-showcase.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Candidates</span>
+    </a>
+    <a class="nav-item" href="demo-jobs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Jobs</span>
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>Pipeline</span>
+    </a>
+
+    <div class="nav-section-label">Workspace</div>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Clients</span>
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      <span>Reports</span>
+    </a>
+
+    <div class="nav-section-label">Admin</div>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="trial-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Enterprise Trial</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+      <div class="demo-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Demo
+      </div>
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Search candidates by name, skill, or source...
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="notif-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="notif-badge">3</div>
+      </div>
+      <div class="user-avatar">SK</div>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Candidates <span>· 147 total</span></h1>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Import
+      </div>
+      <div class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Candidate
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-chip active">All Candidates</div>
+    <div class="filter-chip">Sourced</div>
+    <div class="filter-chip">In Review</div>
+    <div class="filter-chip">Submitted</div>
+    <div class="filter-chip">Placed</div>
+    <div class="filter-divider"></div>
+    <div class="filter-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      All Skills
+    </div>
+    <div class="filter-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Location
+    </div>
+    <div class="filter-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Source
+    </div>
+  </div>
+
+  <!-- Candidates Content -->
+  <div class="candidates-section">
+
+    <!-- Grid -->
+    <div class="candidate-grid">
+
+      <!-- Sarah Chen -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#6366F1,#818CF8)">SC</div>
+          <div class="card-body">
+            <div class="card-name">
+              Sarah Chen
+              <span class="ai-badge-compact high">92%</span>
+            </div>
+            <span class="card-role">Sr. Frontend Engineer</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Senior frontend engineer, 7+ yrs. React ecosystem expert. Strong full-stack capabilities.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">React</span>
+          <span class="card-tag">TypeScript</span>
+          <span class="card-tag">Next.js</span>
+          <span class="card-tag">Node.js</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            LinkedIn
+          </span>
+          <span class="card-date">Added 2d ago</span>
+        </div>
+      </div>
+
+      <!-- Marcus Johnson -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">MJ</div>
+          <div class="card-body">
+            <div class="card-name">
+              Marcus Johnson
+              <span class="ai-badge-compact">87%</span>
+            </div>
+            <span class="card-role">Product Designer</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Senior product designer specializing in design systems. Portfolio includes fintech and health-tech.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">Figma</span>
+          <span class="card-tag">Design Systems</span>
+          <span class="card-tag">Prototyping</span>
+          <span class="card-tag">User Research</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            Dribbble
+          </span>
+          <span class="card-date">Added 3d ago</span>
+        </div>
+      </div>
+
+      <!-- Priya Patel -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#EC4899,#F472B6)">PP</div>
+          <div class="card-body">
+            <div class="card-name">
+              Priya Patel
+              <span class="ai-badge-compact">78%</span>
+            </div>
+            <span class="card-role">Backend Engineer</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Backend engineer, Python/Go specialist. Experience with distributed systems at scale.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">Python</span>
+          <span class="card-tag">FastAPI</span>
+          <span class="card-tag">PostgreSQL</span>
+          <span class="card-tag">Go</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            GitHub
+          </span>
+          <span class="card-date">Added 4d ago</span>
+        </div>
+      </div>
+
+      <!-- James O'Brien -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#F59E0B,#FBBF24)">JO</div>
+          <div class="card-body">
+            <div class="card-name">
+              James O'Brien
+              <span class="ai-badge-compact high">94%</span>
+            </div>
+            <span class="card-role">DevOps Engineer</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Infrastructure engineer, AWS/Azure certified. Kubernetes and Terraform expert.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">Kubernetes</span>
+          <span class="card-tag">Terraform</span>
+          <span class="card-tag">AWS</span>
+          <span class="card-tag">CI/CD</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            Referral
+          </span>
+          <span class="card-date">Added 1w ago</span>
+        </div>
+      </div>
+
+      <!-- Aisha Williams -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#10B981,#34D399)">AW</div>
+          <div class="card-body">
+            <div class="card-name">
+              Aisha Williams
+              <span class="ai-badge-compact">88%</span>
+            </div>
+            <span class="card-role">Data Scientist</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          ML engineer with NLP specialization. PhD in computational linguistics. Published in ACL.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">ML</span>
+          <span class="card-tag">Python</span>
+          <span class="card-tag">TensorFlow</span>
+          <span class="card-tag">NLP</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            LinkedIn
+          </span>
+          <span class="card-date">Added 5d ago</span>
+        </div>
+      </div>
+
+      <!-- Tomás Rivera -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#3B82F6,#60A5FA)">TR</div>
+          <div class="card-body">
+            <div class="card-name">
+              Tomás Rivera
+              <span class="ai-badge-compact">76%</span>
+            </div>
+            <span class="card-role">Full-Stack Developer</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Full-stack developer, Vue/Node stack. Built and shipped 3 production applications.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">Vue</span>
+          <span class="card-tag">Node.js</span>
+          <span class="card-tag">MongoDB</span>
+          <span class="card-tag">GraphQL</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            AngelList
+          </span>
+          <span class="card-date">Added 1w ago</span>
+        </div>
+      </div>
+
+      <!-- Emily Chang -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#8B5CF6,#C084FC)">EC</div>
+          <div class="card-body">
+            <div class="card-name">
+              Emily Chang
+              <span class="ai-badge-compact">82%</span>
+            </div>
+            <span class="card-role">UX Researcher</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Mixed-methods researcher. Expert in usability testing, surveys, and cross-functional insight synthesis.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">User Research</span>
+          <span class="card-tag">Usability</span>
+          <span class="card-tag">Qualitative</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            Referral
+          </span>
+          <span class="card-date">Added 6d ago</span>
+        </div>
+      </div>
+
+      <!-- David Kim -->
+      <div class="candidate-card">
+        <div class="card-row">
+          <div class="card-avatar" style="background:linear-gradient(135deg,#065F46,#059669)">DK</div>
+          <div class="card-body">
+            <div class="card-name">
+              David Kim
+            </div>
+            <span class="card-role">Engineering Manager</span>
+          </div>
+        </div>
+        <div class="card-summary">
+          Engineering leader, 10+ yrs. Former CTO at seed-stage startup. Strong in Agile/Scrum.
+        </div>
+        <div class="card-tags">
+          <span class="card-tag">Leadership</span>
+          <span class="card-tag">Architecture</span>
+          <span class="card-tag">Agile</span>
+          <span class="card-tag">OKRs</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Agency Database
+          </span>
+          <span class="card-date">Added 2w ago</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Detail Panel -->
+    <aside class="candidate-panel">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-header-avatar" style="background:linear-gradient(135deg,#6366F1,#818CF8)">SC</div>
+          <div class="panel-header-info">
+            <div class="panel-name">Sarah Chen</div>
+            <div class="panel-role">Sr. Frontend Engineer</div>
+          </div>
+        </div>
+        <div class="panel-close">×</div>
+      </div>
+
+      <div class="panel-body">
+        <div class="section-title">AI Profile Summary</div>
+        <div class="ai-summary-box">
+          Senior frontend engineer with 7+ years of experience building scalable web applications. Strong track record at Series B+ startups including two successful exits. Full-stack capable with expertise in the React ecosystem, API design, and cloud infrastructure. Excellent written communication and cross-team collaboration skills.
+          <div class="ai-disclosure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            AI-generated · Candidate can request regeneration or flag inaccuracies
+          </div>
+        </div>
+
+        <div class="section-title">Skills</div>
+        <div class="skills-section">
+          <div class="skill-list">
+            <span class="panel-skill top">React</span>
+            <span class="panel-skill top">TypeScript</span>
+            <span class="panel-skill top">Next.js</span>
+            <span class="panel-skill top">Node.js</span>
+            <span class="panel-skill">GraphQL</span>
+            <span class="panel-skill">PostgreSQL</span>
+            <span class="panel-skill">AWS</span>
+            <span class="panel-skill">Tailwind CSS</span>
+            <span class="panel-skill">Jest</span>
+            <span class="panel-skill">CI/CD</span>
+          </div>
+        </div>
+
+        <div class="section-title">Current Match</div>
+        <div class="match-card" style="padding:14px;border-radius:var(--radius);background:var(--color-bg);border:1px solid var(--color-border);margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--color-success);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:18px;font-weight:600;color:#fff;flex-shrink:0;">92%</div>
+            <div>
+              <div style="font-family:var(--font-heading);font-size:14px;font-weight:700;">Sr. Frontend Engineer</div>
+              <div style="font-size:12px;color:var(--color-text-muted);">TechCorp Inc · 8/10 skills matched</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Information</div>
+        <div class="info-rows">
+          <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="info-value"><span class="info-status sourced">Sourced</span></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Source</span>
+            <span class="info-value">LinkedIn · InMail accepted</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Location</span>
+            <span class="info-value">San Francisco, CA</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Notice</span>
+            <span class="info-value">2 weeks</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Salary</span>
+            <span class="info-value">$150-180K</span>
+          </div>
+        </div>
+
+        <div class="section-title">Documents</div>
+        <div class="doc-list">
+          <div class="doc-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="doc-name">Sarah_Chen_Resume.pdf</span>
+            <span class="doc-size">240 KB</span>
+          </div>
+          <div class="doc-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="doc-name">Cover_Letter_TechCorp.docx</span>
+            <span class="doc-size">45 KB</span>
+          </div>
+          <div class="doc-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <span class="doc-name">Portfolio_Link</span>
+            <span class="doc-size">External</span>
+          </div>
+        </div>
+
+        <div class="section-title">Activity Timeline</div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot success">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-title">Resume parsed & enriched</div>
+              <div class="timeline-sub">AI extracted 12 skills, 4 roles, 2 degrees</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-title">AI summary generated</div>
+              <div class="timeline-sub">Profile summary created for recruiter review</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <div class="timeline-title">Matched to Sr. Frontend Engineer</div>
+              <div class="timeline-sub">92% match — TechCorp Inc requisition</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <div class="timeline-title">Candidate sourced via LinkedIn</div>
+              <div class="timeline-sub">InMail sent · Response received in 4h</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <div class="timeline-title">Profile created</div>
+              <div class="timeline-sub">Manual entry from LinkedIn PDF upload</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;padding-top:8px;">
+          <div class="btn" style="flex:1;justify-content:center;">Adjust Match</div>
+          <div class="btn btn-primary" style="flex:1;justify-content:center;">Move to Review</div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</div>
+</body>
+</html>
