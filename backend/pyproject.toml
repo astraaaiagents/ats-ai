@@ -25,6 +25,10 @@ dev = [
     "pytest-httpx>=0.35.0",
 ]
 
+[project.scripts]
+ats-bootstrap = "backend.scripts.bootstrap:main"
+ats-setup-rls = "backend.scripts.setup_rls:main"
+
 [build-system]
 requires = ["setuptools>=75.0"]
 build-backend = "setuptools.build_meta"
