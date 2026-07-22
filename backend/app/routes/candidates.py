@@ -245,7 +245,7 @@ async def get_candidate_timeline(
             id=str(e.id),
             event_type=e.event_type,
             description=e.description,
-            metadata=e.metadata,
+            metadata=e.details,
             created_at=e.created_at.isoformat(),
         )
         for e in events
