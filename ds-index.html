@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgencyOS — AI-Native ATS Demo Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-sidebar: #0F172A;
+  --color-bg: #F8F6F3;
+  --color-card: #FFFFFF;
+  --color-primary: #4F46E5;
+  --color-ai: #D97706;
+  --color-ai-bg: #FEF3C7;
+  --color-success: #059669;
+  --color-text: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
+  --color-border: #E5E7EB;
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -1px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 25px -3px rgba(0,0,0,.08), 0 4px 10px -2px rgba(0,0,0,.04);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hero */
+.hero {
+  background: var(--color-sidebar);
+  padding: 60px 40px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(79,70,229,.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(217,119,6,.08) 0%, transparent 60%);
+}
+
+.hero-content { position: relative; max-width: 700px; margin: 0 auto; }
+
+.demo-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 100px;
+  background: rgba(217,119,6,.15); color: var(--color-ai);
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; margin-bottom: 24px;
+}
+
+.hero-label {
+  font-family: var(--font-heading); font-size: 15px; font-weight: 700;
+  color: rgba(255,255,255,.5); text-transform: uppercase;
+  letter-spacing: .12em; margin-bottom: 12px;
+}
+
+.hero-title {
+  font-family: var(--font-heading); font-size: 52px; font-weight: 800;
+  color: #fff; letter-spacing: -.03em; line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.hero-title span { color: var(--color-ai); }
+
+.hero-sub {
+  font-size: 18px; color: rgba(255,255,255,.55); max-width: 520px;
+  margin: 0 auto 32px; line-height: 1.6;
+}
+
+.hero-meta {
+  display: flex; align-items: center; justify-content: center; gap: 24px;
+  font-size: 13px; color: rgba(255,255,255,.35);
+}
+
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+/* Feature Preview Cards */
+.showcase {
+  max-width: 1100px; margin: -40px auto 0; padding: 0 24px 60px;
+  position: relative;
+}
+
+.showcase-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+
+.showcase-card {
+  background: var(--color-card); border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  overflow: hidden; transition: all .25s;
+  animation: cardUp .5s ease both;
+}
+
+.showcase-card:nth-child(1) { animation-delay: .1s; }
+.showcase-card:nth-child(2) { animation-delay: .2s; }
+.showcase-card:nth-child(3) { animation-delay: .3s; }
+
+.showcase-card:hover {
+  box-shadow: var(--shadow-lg); transform: translateY(-3px);
+  border-color: var(--color-primary);
+}
+
+.card-preview {
+  height: 200px; background: var(--color-bg);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+
+.card-preview-content {
+  width: 85%; display: flex; flex-direction: column; gap: 6px;
+}
+
+.preview-bar {
+  height: 8px; border-radius: 4px; background: var(--color-border);
+}
+
+.preview-bar.fill { background: var(--color-primary); }
+.preview-bar.fill-ai { background: var(--color-ai); }
+.preview-bar.fill-success { background: var(--color-success); }
+.preview-bar.fill-sm { width: 70%; }
+.preview-bar.fill-xs { width: 45%; }
+
+.preview-kanban {
+  display: flex; gap: 6px; margin-top: 4px;
+}
+
+.preview-col {
+  flex: 1; padding: 8px; border-radius: 6px;
+  background: rgba(0,0,0,.03); display: flex; flex-direction: column; gap: 4px;
+}
+
+.preview-col-header {
+  height: 6px; width: 60%; border-radius: 3px; background: var(--color-text-muted); opacity: .3;
+}
+
+.preview-card {
+  height: 24px; border-radius: 4px; background: var(--color-card);
+  border: 1px solid var(--color-border);
+}
+
+.preview-card.ai { border-left: 2px solid var(--color-ai); }
+
+.preview-row { display: flex; gap: 6px; }
+.preview-avatar {
+  width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0;
+}
+
+.preview-avatar.purple { background: linear-gradient(135deg,#6366F1,#818CF8); }
+.preview-avatar.pink { background: linear-gradient(135deg,#EC4899,#F472B6); }
+.preview-avatar.amber { background: linear-gradient(135deg,#F59E0B,#FBBF24); }
+.preview-avatar.green { background: linear-gradient(135deg,#10B981,#34D399); }
+
+.preview-lines { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.preview-line { height: 6px; border-radius: 3px; background: var(--color-border); }
+.preview-line.wide { width: 100%; }
+.preview-line.narrow { width: 60%; }
+
+.preview-job-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; background: var(--color-card);
+  border: 1px solid var(--color-border);
+}
+
+.preview-job-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.preview-job-dot.blue { background: #3B82F6; }
+.preview-job-dot.amber { background: #F59E0B; }
+.preview-job-dot.green { background: #10B981; }
+
+.preview-job-bar {
+  flex: 1; height: 6px; border-radius: 3px; background: var(--color-border);
+}
+
+.card-body-text {
+  padding: 22px 24px;
+}
+
+.card-label {
+  font-family: var(--font-heading); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-family: var(--font-heading); font-size: 20px; font-weight: 700;
+  color: var(--color-text); letter-spacing: -.02em; margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.card-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--radius-sm);
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--color-text-secondary); text-decoration: none;
+  transition: all .15s;
+}
+
+.card-link:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.card-link svg { width: 16px; height: 16px; }
+
+/* AgencyOS Principles */
+.principles {
+  max-width: 1100px; margin: 0 auto; padding: 60px 24px;
+}
+
+.principles-header {
+  text-align: center; margin-bottom: 40px;
+}
+
+.principles-label {
+  font-family: var(--font-heading); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--color-text-muted); margin-bottom: 8px;
+}
+
+.principles-title {
+  font-family: var(--font-heading); font-size: 28px; font-weight: 800;
+  color: var(--color-text); letter-spacing: -.02em;
+}
+
+.principles-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+
+.principle-card {
+  padding: 20px; border-radius: var(--radius);
+  background: var(--color-card); border: 1px solid var(--color-border);
+}
+
+.principle-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px; font-size: 18px;
+}
+
+.principle-icon.hi { background: #EEF2FF; }
+.principle-icon.shield { background: #FEF3C7; }
+.principle-icon.ai-icon { background: #ECFDF5; }
+
+.principle-name {
+  font-family: var(--font-heading); font-size: 15px; font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.principle-desc {
+  font-size: 13px; color: var(--color-text-secondary); line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px; color: var(--color-text-muted);
+}
+
+.footer strong { color: var(--color-text-secondary); }
+
+/* Animations */
+@keyframes cardUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase-card { animation: none; }
+  .showcase-card:hover { transform: none; }
+}
+
+@media (max-width: 900px) {
+  .showcase-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+  .principles-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 40px 20px 60px; }
+  .hero-title { font-size: 32px; }
+  .hero-sub { font-size: 16px; }
+  .hero-meta { flex-direction: column; gap: 8px; }
+  .showcase { padding: 0 16px 40px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-label">AgencyOS</div>
+    <h1 class="hero-title">AI-Native<br><span>ATS</span> Demo Showcase</h1>
+    <p class="hero-sub">
+      Three interactive mockups showing the core platform: pipeline management, candidate intelligence, and job requisition workflows — all with embedded AI decision support.
+    </p>
+    <div class="hero-meta">
+      <span>Built for US, UK & EU markets</span>
+      <span>EU AI Act High-Risk compliant</span>
+      <span>Human-in-the-loop by design</span>
+    </div>
+  </div>
+</section>
+
+<!-- Showcase Cards -->
+<section class="showcase">
+  <div class="showcase-grid">
+
+    <!-- Card 1: Pipeline Dashboard -->
+    <div class="showcase-card">
+      <div class="card-preview">
+        <div class="card-preview-content">
+          <div class="preview-bar fill" style="width:40%;margin-bottom:4px;"></div>
+          <div class="preview-kanban">
+            <div class="preview-col">
+              <div class="preview-col-header"></div>
+              <div class="preview-card ai" style="height:36px;"></div>
+              <div class="preview-card ai" style="height:28px;"></div>
+              <div class="preview-card" style="height:28px;"></div>
+            </div>
+            <div class="preview-col">
+              <div class="preview-col-header"></div>
+              <div class="preview-card ai" style="height:28px;"></div>
+              <div class="preview-card" style="height:36px;"></div>
+            </div>
+            <div class="preview-col">
+              <div class="preview-col-header"></div>
+              <div class="preview-card" style="height:28px;"></div>
+            </div>
+            <div class="preview-col">
+              <div class="preview-col-header"></div>
+              <div class="preview-card" style="height:28px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body-text">
+        <div class="card-label">Dashboard</div>
+        <div class="card-title">Pipeline &amp; Kanban</div>
+        <div class="card-desc">
+          Visual pipeline with sourced, in-review, submitted, and interview stages. AI match scores on every candidate card.
+        </div>
+        <a href="demo-showcase.html" class="card-link">
+          View Pipeline
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 2: Candidates -->
+    <div class="showcase-card">
+      <div class="card-preview">
+        <div class="card-preview-content">
+          <div class="preview-row" style="margin-bottom:6px;">
+            <div class="preview-avatar purple"></div>
+            <div class="preview-lines">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-bar fill-ai" style="width:32px;height:18px;border-radius:9px;"></div>
+          </div>
+          <div class="preview-row" style="margin-bottom:6px;">
+            <div class="preview-avatar pink"></div>
+            <div class="preview-lines">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-bar fill" style="width:32px;height:18px;border-radius:9px;"></div>
+          </div>
+          <div class="preview-row" style="margin-bottom:6px;">
+            <div class="preview-avatar amber"></div>
+            <div class="preview-lines">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-bar fill-ai" style="width:32px;height:18px;border-radius:9px;"></div>
+          </div>
+          <div class="preview-row">
+            <div class="preview-avatar green"></div>
+            <div class="preview-lines">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body-text">
+        <div class="card-label">CRM</div>
+        <div class="card-title">Candidate Intelligence</div>
+        <div class="card-desc">
+          Profile management with AI-generated summaries, skill extraction, document store, activity timeline, and match scores.
+        </div>
+        <a href="demo-candidates.html" class="card-link">
+          View Candidates
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 3: Jobs -->
+    <div class="showcase-card">
+      <div class="card-preview">
+        <div class="card-preview-content">
+          <div class="preview-job-row">
+            <div class="preview-job-dot blue"></div>
+            <div class="preview-lines" style="flex:2;">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-job-bar" style="width:32px;"></div>
+          </div>
+          <div class="preview-job-row">
+            <div class="preview-job-dot amber"></div>
+            <div class="preview-lines" style="flex:2;">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-job-bar" style="width:48px;"></div>
+          </div>
+          <div class="preview-job-row">
+            <div class="preview-job-dot blue"></div>
+            <div class="preview-lines" style="flex:2;">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-job-bar" style="width:24px;"></div>
+          </div>
+          <div class="preview-job-row">
+            <div class="preview-job-dot green"></div>
+            <div class="preview-lines" style="flex:2;">
+              <div class="preview-line wide"></div>
+              <div class="preview-line narrow"></div>
+            </div>
+            <div class="preview-job-bar" style="width:40px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body-text">
+        <div class="card-label">Requisitions</div>
+        <div class="card-title">Job Management</div>
+        <div class="card-desc">
+          Requisition lifecycle with structured requirement capture, AI skill matching, pipeline progress bars, and deal terms.
+        </div>
+        <a href="demo-jobs.html" class="card-link">
+          View Jobs
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Principles -->
+<section class="principles">
+  <div class="principles-header">
+    <div class="principles-label">By Design</div>
+    <h2 class="principles-title">Built for human oversight</h2>
+  </div>
+  <div class="principles-grid">
+    <div class="principle-card">
+      <div class="principle-icon hi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="principle-name">Human-in-the-Loop</div>
+      <div class="principle-desc">AI supports, humans decide. Every shortlist requires explicit approval. Override reasons are captured.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-icon shield">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="principle-name">PII Privacy Shield</div>
+      <div class="principle-desc">All LLM requests pass through a local redaction layer. PII is replaced with contextual tokens before reaching external APIs.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-icon ai-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" width="20" height="20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div class="principle-name">Transparent AI</div>
+      <div class="principle-desc">AI outputs are always labeled. Candidates see how their data is used. Right-to-explanation is built in.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <strong>AgencyOS</strong> &mdash; AI-Native Agency ATS &middot; Demo Showcase &middot; EU AI Act Annex III Compliant
+</footer>
+
+</body>
+</html>

@@ -37,6 +37,9 @@ class User(Base):
     )
 
     organization: Mapped["Organization | None"] = relationship(back_populates="users")
+    candidates: Mapped[list["Candidate"]] = relationship(
+        back_populates="owner", foreign_keys="[Candidate.owner_id]"
+    )
 
     __table_args__ = (
         Index(
