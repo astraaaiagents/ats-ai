@@ -1,57 +1,108 @@
-# Core Features - ATS Backend
+# AgencyOS — AI-Native ATS for Staffing Agencies
 
-⏺ Task 1.3 Complete — Organization, User & Client Contact Management
+A cloud-based, multi-tenant applicant tracking system built for external recruitment and staffing agencies serving the US, UK, and EU markets. AI functions exclusively as decision support — all candidate ranking and shortlist decisions require human approval. Classified as a **High-Risk AI System** under EU AI Act Annex III, Point 4(a).
 
-  What was implemented
+## UI Mockups (GitHub Pages)
 
-  New Routes:
+| Mockup | Link |
+|--------|------|
+| Demo Showcase | https://astraaaiagents.github.io/ats-ai/ |
+| Dashboard | https://astraaaiagents.github.io/ats-ai/dashboard.html |
+| Candidates | https://astraaaiagents.github.io/ats-ai/demo-candidates.html |
+| Jobs | https://astraaaiagents.github.io/ats-ai/demo-jobs.html |
+| Showcase | https://astraaaiagents.github.io/ats-ai/demo-showcase.html |
 
-  ┌─────────────────────────────┬────────┬───────────────┬────────────────────────────────────────────────┐
-  │          Endpoint           │ Method │    Access     │                  Description                   │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/organizations       │ POST   │ SuperAdmin    │ Create organization (duplicate slug check)     │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/organizations/:id   │ GET    │ SuperAdmin    │ Get organization by ID                         │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/organizations/:id   │ PUT    │ SuperAdmin    │ Update organization (KMS key rotation note)    │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/users               │ GET    │ Admin/Manager │ List users with cursor pagination              │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/users/invite        │ POST   │ Admin/Manager │ Invite user via 48h magic link                 │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/users/:id           │ PUT    │ Admin/Manager │ Update user (reason required for role changes) │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/users/:id           │ DELETE │ Admin/Manager │ Deactivate user (increments token_version)     │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/client-contacts     │ GET    │ Admin/Manager │ List client contacts with pagination           │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/client-contacts     │ POST   │ Admin/Manager │ Create client contact (duplicate email check)  │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/client-contacts/:id │ PUT    │ Admin/Manager │ Update client contact                          │
-  ├─────────────────────────────┼────────┼───────────────┼────────────────────────────────────────────────┤
-  │ /api/v1/client-contacts/:id │ DELETE │ Admin/Manager │ Soft-delete (is_active=False)                  │
-  └─────────────────────────────┴────────┴───────────────┴────────────────────────────────────────────────┘
+## Product Overview
 
-  Key behaviors:
-  - Role-based access control via require_role(["super_admin"]) / require_role(["admin", "manager"])
-  - Tenant isolation via SET LOCAL app.organization_id from JWT org_id claim
-  - Magic link tokens with 48h TTL for user invites
-  - reason field required for role changes (ownership transfer)
-  - User deactivation increments token_version, revoking all existing tokens
-  - Soft-delete for client contacts and users (via is_active)
-  - Cursor-based pagination (default 25, max 100)
+**Vision:** The operating system for modern staffing agencies — one platform where recruiters source, manage, engage, and submit candidates at scale with AI assistance, while keeping humans in control of hiring decisions.
 
-  27 integration tests covering:
-  - All CRUD operations with success/error paths
-  - Role enforcement (recruiter blocked from admin endpoints)
-  - Auth enforcement (unauthenticated requests rejected)
-  - Duplicate slug/email validation (409 conflicts)
-  - Tenant isolation (different org tokens produce different org_id)
-  - Token revocation on deactivation
-  - Refresh token rejection on protected endpoints
-  - Password reset token expiry
+**Core Value Propositions:**
+- **Recruiter Efficiency:** Reduce candidate prep from ~45 min to under 5 min per submission
+- **Speed to Submittal:** 50% faster first-submittal via semantic matching and AI summarization
+- **Candidate Transparency:** AI-generated profile summaries, job recommendations, and clear AI disclosure
+- **Turnkey Compliance:** EU AI Act high-risk compliance controls out of the box
 
-  Test results
+### Personas
 
-  68 passed, 5 warnings (41 existing + 27 new)
-  
+| Persona | Role |
+|---------|------|
+| **Account Manager** | Business development, clients, jobs — reviews shortlists, presents to clients |
+| **Sourcer** | Finds and engages candidates — daily driver of CRM, AI parsers, outreach |
+| **Candidate** | Self-service portal, AI summaries, job recommendations, consent management |
+| **Client** | Read-only portal via magic link — reviews submissions, provides feedback |
+| **Agency Admin** | Multi-tenant config, RBAC, compliance logs, LLM token cost control |
+
+### Target Markets
+
+USA, UK, EU — with GDPR/UK GDPR/CCPA alignment and EU AI Act compliance built in.
+
+---
+
+## Backend Implementation
+
+**Stack:** FastAPI (async) · SQLAlchemy 2.0+ (async) · PostgreSQL · Redis · JWT (python-jose) · bcrypt
+
+### Architecture
+
+- **Multi-tenant:** Tenant isolation via `SET LOCAL app.organization_id` + PostgreSQL RLS
+- **Auth:** JWT access + refresh tokens, Bearer `HTTPBearer`, token versioning for revocation
+- **Pagination:** Cursor-based (default 25, max 100)
+- **Error handling:** `AppException(code, message, status_code)` → `{"error": {...}}`
+- **Migrations:** Raw Alembic Python files in `backend/db/versions/`
+
+### Current API Surface
+
+| Endpoint | Method | Access | Description |
+|----------|--------|--------|-------------|
+| `/api/v1/health` | GET | Public | Health check |
+| `/api/v1/auth/*` | — | Mixed | Login, register, refresh, password reset |
+| `/api/v1/candidates/*` | — | Authenticated | CRUD, skills, timeline, status, duplicates |
+| `/api/v1/organizations` | POST | SuperAdmin | Create organization |
+| `/api/v1/organizations/:id` | GET/PUT | SuperAdmin | Read/update organization |
+| `/api/v1/users` | GET | Admin/Manager | List users (cursor pagination) |
+| `/api/v1/users/invite` | POST | Admin/Manager | Invite via 48h magic link |
+| `/api/v1/users/:id` | PUT/DELETE | Admin/Manager | Update/deactivate user |
+| `/api/v1/client-contacts` | GET/POST | Admin/Manager | List/create client contacts |
+| `/api/v1/client-contacts/:id` | PUT/DELETE | Admin/Manager | Update/soft-delete |
+
+### Test Suite
+
+**68 tests passing** — integration tests using `httpx.ASGITransport` (no real server), Redis mocked via `mock_redis` fixture. Coverage includes CRUD, role enforcement, auth enforcement, duplicate validation, tenant isolation, token revocation.
+
+### Running Locally
+
+```bash
+# From the backend/ directory
+cp .env.example .env          # edit DATABASE_URL, JWT_SECRET, REDIS_URL
+pytest                        # run tests (no external services needed)
+uvicorn app.main:app          # dev server
+```
+
+Or from repo root with full stack:
+```bash
+docker compose up
+```
+
+---
+
+## Development Phases
+
+| Phase | Focus | Timeline |
+|-------|-------|----------|
+| **1** | Core platform: multi-tenant, auth, candidate/job management, submission workflows | Months 1–3 |
+| **2** | CRM & AI: resume parsing, AI summaries, sourcing, outreach, activity tracking | Months 3–4 |
+| **3** | AI matching, ranking, client portal with magic-link auth | Months 4–5 |
+| **4** | Compliance hardening, EU AI Act, bias monitoring, GA readiness | Months 5–6 |
+
+Full PRD: [`deepseek-ats-ai.md`](./deepseek-ats-ai.md)
+
+---
+
+## Key Compliance Principles
+
+- **Human approval required** for any AI-supported ranking or shortlist export
+- **No automated rejection** — AI cannot reject or auto-select candidates
+- **Override reasons captured** when recruiter changes an AI ranking
+- **PII redacted** before any external LLM request via privacy shield middleware
+- **Zero Data Retention** agreements with all LLM providers
+- **Audit logging** for all AI interactions, prompts, outputs, and overrides
