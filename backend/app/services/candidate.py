@@ -32,10 +32,15 @@ async def create_candidate(
 
     # Add skills
     for skill_data in skills_data:
+        # Handle both dict and Pydantic model
+        if hasattr(skill_data, "model_dump"):
+            skill_kwargs = skill_data.model_dump()
+        else:
+            skill_kwargs = dict(skill_data)
         skill = CandidateSkill(
             organization_id=UUID(organization_id),
             candidate_id=candidate.id,
-            **skill_data.model_dump(),
+            **skill_kwargs,
         )
         db.add(skill)
 
