@@ -2,15 +2,11 @@
 
 A cloud-based, multi-tenant applicant tracking system built for external recruitment and staffing agencies serving the US, UK, and EU markets. AI functions exclusively as decision support — all candidate ranking and shortlist decisions require human approval. Classified as a **High-Risk AI System** under EU AI Act Annex III, Point 4(a).
 
-## UI Mockups (GitHub Pages)
+## UI Mockup (GitHub Pages)
 
 | Mockup | Link |
 |--------|------|
-| Demo Showcase | https://astraaaiagents.github.io/ats-ai/ |
-| Dashboard | https://astraaaiagents.github.io/ats-ai/dashboard.html |
-| Candidates | https://astraaaiagents.github.io/ats-ai/demo-candidates.html |
-| Jobs | https://astraaaiagents.github.io/ats-ai/demo-jobs.html |
-| Showcase | https://astraaaiagents.github.io/ats-ai/demo-showcase.html |
+| Agent-First Recruiter Portal | https://astraaaiagents.github.io/ats-ai/agent-portal.html |
 
 ## Product Overview
 
