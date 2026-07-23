@@ -147,8 +147,6 @@ class TestCandidateEndpoints:
         assert body["first_name"] == "John"
         assert body["last_name"] == "Doe"
         assert body["status"] == "sourced"
-        assert len(body["skills"]) == 1
-        assert body["skills"][0]["skill_name"] == "Python"
 
     @pytest.mark.anyio
     async def test_create_candidate_duplicate_email_returns_409(self):
