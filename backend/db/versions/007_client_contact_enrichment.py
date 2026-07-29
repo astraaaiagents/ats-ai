@@ -11,8 +11,8 @@ columns to client_contacts for the Jobs tab.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "007"
-down_revision = "006"
+revision = "007_client_contact_enrichment"
+down_revision = "006_skill_embeddings"
 branch_labels = None
 depends_on = None
 

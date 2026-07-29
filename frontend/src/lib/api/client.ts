@@ -89,8 +89,20 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   let token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(extraHeaders as Record<string, string>),
   };
+  if (extraHeaders) {
+    if (extraHeaders instanceof Headers) {
+      extraHeaders.forEach((val, key) => {
+        headers[key] = val;
+      });
+    } else if (Array.isArray(extraHeaders)) {
+      extraHeaders.forEach(([key, val]) => {
+        headers[key] = val;
+      });
+    } else {
+      Object.assign(headers, extraHeaders as Record<string, string>);
+    }
+  }
 
   if (!skipAuth && token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -118,9 +130,12 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(
-      body?.error?.message || body?.error || `API error: ${response.status}`
-    );
+    const msg =
+      body?.error?.message ||
+      (typeof body?.error === "string" ? body.error : null) ||
+      (typeof body?.detail === "string" ? body.detail : null) ||
+      `API error: ${response.status}`;
+    throw new Error(msg);
   }
 
   // Handle 204 No Content

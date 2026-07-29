@@ -73,18 +73,20 @@ async def _authenticate_user(db: AsyncSession, email: str, password: str) -> tup
 
 
 def _build_token_data(user: object, user_type: str) -> dict:
+    role_val = getattr(user.role, "value", user.role)
+    role_str = str(role_val) if role_val is not None else None
     if user_type == "platform":
         return {
             "sub": str(user.id),
             "org_id": None,
-            "role": user.role,
+            "role": role_str,
             "token_version": 0,
         }
     return {
         "sub": str(user.id),
-        "org_id": str(user.organization_id) if user.organization_id else None,
-        "role": user.role,
-        "token_version": user.token_version,
+        "org_id": str(user.organization_id) if getattr(user, "organization_id", None) else None,
+        "role": role_str,
+        "token_version": getattr(user, "token_version", 0),
     }
 
 
@@ -106,6 +108,30 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_session)):
         )
     )
 
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+
+@auth_router.post("/dev-token", response_model=TokenResponse)
+async def dev_token(db: AsyncSession = Depends(get_session)):
+    """Obtain a dev access token for auto-authenticated frontend session."""
+    result = await db.execute(select(User).where(User.is_active == True).order_by(User.created_at))
+    user = result.scalars().first()
+    user_type = "org"
+    if not user:
+        result_p = await db.execute(select(PlatformUser).where(PlatformUser.is_active == True))
+        user = result_p.scalars().first()
+        user_type = "platform"
+
+    if not user:
+        raise AppException(
+            code="USER_NOT_FOUND",
+            message="No active user found in database",
+            status_code=404,
+        )
+
+    token_data = _build_token_data(user, user_type)
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
@@ -183,12 +209,7 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_session))
                 message="User account is inactive",
                 status_code=401,
             )
-        token_data = {
-            "sub": str(platform_user.id),
-            "org_id": None,
-            "role": platform_user.role,
-            "token_version": 0,
-        }
+        token_data = _build_token_data(platform_user, "platform")
 
     new_access_token = create_access_token(token_data)
     new_refresh_token = create_refresh_token(token_data)

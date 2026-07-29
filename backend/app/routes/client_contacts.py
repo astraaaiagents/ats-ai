@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, require_role
 from app.database import get_session
 from app.middleware.error_handler import AppException
-from fastapi import Depends
 
 from app.middleware.pagination import PaginationParams, paginated_response
 from app.models.client_contact import ClientContact
@@ -123,7 +122,7 @@ async def create_client_contact(
         status=body.status or "active",
     )
     db.add(contact)
-    await db.commit()
+    await db.flush()
     await db.refresh(contact)
 
     return ClientContactResponse(
@@ -188,7 +187,7 @@ async def update_client_contact(
     for key, value in update_data.items():
         setattr(contact, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(contact)
 
     return ClientContactResponse(
@@ -232,7 +231,7 @@ async def delete_client_contact(
         )
 
     contact.is_active = False
-    await db.commit()
+    await db.flush()
     await db.refresh(contact)
 
     return ClientContactResponse(

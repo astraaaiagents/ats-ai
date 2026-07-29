@@ -13,15 +13,7 @@ import { InputBar } from "./input-bar";
 import { QuickActionChips } from "./quick-action-chips";
 import { sendConversation } from "@/lib/api/hooks";
 import type { SSEEvent, SSEContent, SSECard, SSEAction } from "@/lib/api/types";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "agent" | "system";
-  content: string;
-  timestamp: string;
-  cards?: Record<string, unknown>[];
-  actions?: Record<string, unknown>[];
-}
+import type { ChatMessage, ChatCard, ChatAction } from "./command-message";
 
 export function CompactChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -49,8 +41,8 @@ export function CompactChat() {
 
     try {
       let agentContent = "";
-      const cards: Record<string, unknown>[] = [];
-      const actions: Record<string, unknown>[] = [];
+      const cards: ChatCard[] = [];
+      const actions: ChatAction[] = [];
       const streamingMsgId = (Date.now() + 1).toString();
       const agentMsgPlaceholder: ChatMessage = {
         id: streamingMsgId,
@@ -60,34 +52,37 @@ export function CompactChat() {
       };
       setMessages((prev) => [...prev, agentMsgPlaceholder]);
 
-      await sendConversation(text, sessionId, (event: SSEEvent) => {
-        if ("type" in event && event.type === "content") {
-          const contentEvent = event as unknown as SSEContent;
-          agentContent += contentEvent.content;
+      await sendConversation(text, sessionId, (event: SSEEvent & { sse_type?: string }) => {
+        const et = (event as any).sse_type;
+        if (et === "content") {
+          agentContent += (event as any).content || "";
           setMessages((prev) =>
             prev.map((m) =>
               m.id === streamingMsgId ? { ...m, content: agentContent } : m
             )
           );
-        } else if ("type" in event && event.type === "card") {
-          const cardData = (event as unknown as SSECard).data;
-          cards.push(cardData);
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === streamingMsgId ? { ...m, cards: [...(m.cards || []), cardData] } : m
-            )
-          );
-        } else if ("type" in event && event.type === "action") {
-          const actionPayload = (event as unknown as SSEAction).payload;
-          actions.push(actionPayload);
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === streamingMsgId ? { ...m, actions: [...(m.actions || []), actionPayload] } : m
-            )
-          );
-        } else if ("session_id" in event) {
-          // message_start
-          setSessionId((event as { session_id: string }).session_id);
+        } else if (et === "card") {
+          const cardData = (event as any).data as ChatCard | undefined;
+          if (cardData) {
+            cards.push(cardData);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === streamingMsgId ? { ...m, cards: [...(m.cards || []), cardData] } : m
+              )
+            );
+          }
+        } else if (et === "action") {
+          const actionPayload = (event as any).payload as ChatAction | undefined;
+          if (actionPayload) {
+            actions.push(actionPayload);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === streamingMsgId ? { ...m, actions: [...(m.actions || []), actionPayload] } : m
+              )
+            );
+          }
+        } else if (et === "message_start" && (event as any).session_id) {
+          setSessionId((event as any).session_id);
         }
       });
     } catch (error) {
@@ -108,19 +103,20 @@ export function CompactChat() {
     handleSend(action);
   };
 
-  const handleMessageAction = (actionId: string, payload: any) => {
+  const handleMessageAction = (actionId: string, payload: unknown) => {
     let text = actionId;
-    if (payload?.candidate_id) {
+    const p = payload as { candidate_id?: string; action?: string } | undefined;
+    if (p?.candidate_id) {
       const type = actionId.split('_')[0];
-      text = `${type} candidate ${payload.candidate_id}`;
-    } else if (payload?.action) {
-      text = payload.action;
+      text = `${type} candidate ${p.candidate_id}`;
+    } else if (p?.action) {
+      text = p.action;
     }
     handleSend(text);
   };
 
   return (
-    <div className="flex h-full flex-col" style={{ width: 340 }}>
+    <div className="flex h-full flex-col w-full">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <span className="text-xs font-semibold text-text-primary">Command Panel</span>

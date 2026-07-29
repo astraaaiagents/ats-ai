@@ -6,10 +6,10 @@
 "use client";
 
 import { useCommandPanel } from "@/lib/store/ui";
-import { Button } from "@/components/ui/button";
 import { FitBadge } from "@/components/shared/fit-badge";
 import { SkillTags } from "@/components/shared/skill-tags";
 import { useCandidate } from "@/lib/api/hooks";
+import type { CandidateResponse } from "@/lib/api/types";
 
 interface SideBySideCompareProps {
   candidateIdA: string;
@@ -31,13 +31,13 @@ export function SideBySideCompare({ candidateIdA, candidateIdB }: SideBySideComp
     );
   }
 
-  const mapCandidate = (cand: any) => {
+  const mapCandidate = (cand: CandidateResponse | undefined) => {
     if (!cand) return null;
     return {
       name: `${cand.first_name} ${cand.last_name}`,
       title: cand.current_title || "Unknown Title",
       fitScore: 85, // Stub for now
-      skills: cand.skills?.map((s: any) => s.skill_name) || [],
+      skills: cand.skills?.map((s) => s.skill_name) || [],
       strengths: ["Stub Strength"], // Stub
     };
   };

@@ -37,16 +37,17 @@ export function parseSSE(raw: string): SSEEvent[] {
   let data = "";
 
   for (const line of lines) {
-    if (line === "") {
+    const trimmed = line.trim();
+    if (trimmed === "") {
       if (event && data) {
         events.push(parseEvent(event, data));
       }
       event = null;
       data = "";
-    } else if (line.startsWith("event:")) {
-      event = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      data = line.slice(5).trim();
+    } else if (trimmed.startsWith("event:")) {
+      event = trimmed.slice(6).trim();
+    } else if (trimmed.startsWith("data:")) {
+      data = trimmed.slice(5).trimStart();
     }
   }
 
@@ -59,21 +60,29 @@ export function parseSSE(raw: string): SSEEvent[] {
 }
 
 function parseEvent(type: string, data: string): SSEEvent {
-  const parsed = JSON.parse(data);
+  try {
+    const parsed = JSON.parse(data);
 
-  switch (type) {
-    case "message_start":
-      return parsed as SSEMessageStart;
-    case "content":
-      return parsed as SSEContent;
-    case "card":
-      return parsed as SSECard;
-    case "action":
-      return parsed as SSEAction;
-    case "message_end":
-      return parsed as SSEMessageEnd;
-    default:
-      return parsed as SSEEvent;
+    // Preserve the SSE event type for frontend dispatch
+    const sse_type = type;
+
+    switch (type) {
+      case "message_start":
+        return { ...parsed, sse_type } as unknown as SSEEvent;
+      case "content":
+        return { ...parsed, sse_type } as unknown as SSEEvent;
+      case "card":
+        return { ...parsed, sse_type } as unknown as SSEEvent;
+      case "action":
+        return { ...parsed, sse_type } as unknown as SSEEvent;
+      case "message_end":
+        return { ...parsed, sse_type } as unknown as SSEEvent;
+      default:
+        return { ...parsed, sse_type } as unknown as SSEEvent;
+    }
+  } catch (err) {
+    console.error("Failed to parse SSE event data:", err, data);
+    return { type: "content", content: "", sse_type: type } as unknown as SSEEvent;
   }
 }
 
@@ -86,12 +95,17 @@ export async function* readSSEStream(
   body: unknown,
   onToken: () => string
 ): AsyncGenerator<SSEEvent> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const token = onToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}${url}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${onToken()}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -118,6 +132,7 @@ export async function* readSSEStream(
 
       for (const part of parts) {
         const events = parseSSE(part);
+        console.log("[SSE] parsed events from chunk:", events.length, events);
         for (const event of events) {
           yield event;
         }

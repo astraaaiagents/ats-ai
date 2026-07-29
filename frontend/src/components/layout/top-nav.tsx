@@ -5,7 +5,6 @@
 
 "use client";
 
-import { useState } from "react";
 import { Search, Bell, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { TabBar } from "./tab-bar";
 import { useSearch } from "@/lib/store/ui";
@@ -21,7 +20,6 @@ interface TopNavProps {
 
 export function TopNav({ activeTab, onPanelToggle }: TopNavProps) {
   const { query, setQuery, isOpen, close } = useSearch();
-  const [searchFocused, setSearchFocused] = useState(false);
 
   return (
     <header className="flex h-12 items-center justify-between border-b border-border bg-elevated px-4">
@@ -41,8 +39,6 @@ export function TopNav({ activeTab, onPanelToggle }: TopNavProps) {
             placeholder="Search candidates, jobs, conversations…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
             className="h-8 pl-9 pr-16 rounded-input bg-surface border-0 text-sm"
           />
           <kbd className="absolute right-2 top-1/2 -translate-y-1/2 rounded-button border border-border bg-surface px-1.5 py-0.5 text-[10px] text-text-tertiary">
@@ -94,7 +90,7 @@ export function TopNav({ activeTab, onPanelToggle }: TopNavProps) {
                 Quick Results
               </div>
               <div className="px-3 py-1.5 rounded-button hover:bg-hover cursor-pointer text-text-primary">
-                No results for "{query || "your search"}"
+                No results for &quot;{query || "your search"}&quot;
               </div>
             </div>
           </div>

@@ -46,7 +46,7 @@ async def create_candidate(
         )
         db.add(skill)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(candidate)
     return candidate
 
@@ -167,7 +167,7 @@ async def update_candidate(
         if value is not None and hasattr(candidate, key):
             setattr(candidate, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(candidate)
     return candidate
 
@@ -204,7 +204,7 @@ async def change_candidate_status(
     )
     db.add(timeline)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(candidate)
     return candidate
 

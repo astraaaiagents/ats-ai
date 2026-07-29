@@ -129,7 +129,7 @@ async def invite_user(
             is_active=True,
         )
         db.add(user)
-        await db.commit()
+        await db.flush()
         await db.refresh(user)
 
     # Generate magic link token (48h TTL)
@@ -153,7 +153,7 @@ async def invite_user(
             details={"email": body.email, "role": body.role},
         )
     )
-    await db.commit()
+    await db.flush()
 
     app_url = "http://localhost:3000"
     magic_link = f"{app_url}/invite?token={magic_token}"
@@ -254,7 +254,7 @@ async def update_user(
     for key, value in update_data.items():
         setattr(user, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(user)
 
     return UserResponse(
@@ -303,7 +303,7 @@ async def deactivate_user(
         )
     )
 
-    await db.commit()
+    await db.flush()
     await db.refresh(user)
 
     return UserResponse(

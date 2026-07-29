@@ -6,12 +6,8 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
 import { usePreferences, useUpdatePreferences } from "@/lib/api/hooks";
 
 interface PreferenceRule {
@@ -25,15 +21,17 @@ export function ExplicitPreferences() {
   const { data: prefs, isLoading } = usePreferences();
   const updateMutation = useUpdatePreferences();
 
+  const explicitScores = prefs?.explicit;
+
   const rules = useMemo<PreferenceRule[]>(() => {
-    if (!prefs?.explicit) return [];
-    return Object.entries(prefs.explicit).map(([field, value]) => ({
+    if (!explicitScores) return [];
+    return Object.entries(explicitScores).map(([field, value]) => ({
       id: field,
       field,
       value: String(value),
       enabled: true,
     }));
-  }, [prefs?.explicit]);
+  }, [explicitScores]);
 
   const toggleRule = (id: string) => {
     const rule = rules.find((r) => r.id === id);

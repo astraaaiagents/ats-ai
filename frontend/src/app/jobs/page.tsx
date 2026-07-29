@@ -1,17 +1,19 @@
 /* ── Jobs View Page ─────────────────────────────────────────────────
 
-   Job cards with mock data.
+   Redirects to /?tab=jobs for backward compatibility.
 */
 
 "use client";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { JobsView } from "@/components/jobs/jobs-view";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function JobsPage() {
-  return (
-    <AppShell defaultTab="jobs">
-      <JobsView />
-    </AppShell>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/?tab=jobs");
+  }, [router]);
+
+  return null;
 }

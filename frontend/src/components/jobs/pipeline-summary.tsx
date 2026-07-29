@@ -5,8 +5,6 @@
 
 "use client";
 
-import { cn } from "@/lib/utils";
-
 interface PipelineSummaryProps {
   summary: string;
   count: number;

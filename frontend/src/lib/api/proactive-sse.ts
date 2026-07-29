@@ -12,7 +12,7 @@ export type ProactiveAlertHandler = (alert: ProactiveAlertResponse) => void;
 
 let sseConnection: EventSource | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-let handlers: Set<ProactiveAlertHandler> = new Set();
+const handlers: Set<ProactiveAlertHandler> = new Set();
 let reconnectAttempts = 0;
 const MAX_RECONNECT_DELAY = 30_000; // Cap at 30s
 
@@ -80,7 +80,7 @@ function connectSSE(): void {
 }
 
 function scheduleReconnect(): void {
-  if (reconnectTimeout) return;
+  if (reconnectTimeout || handlers.size === 0) return;
 
   // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s (capped)
   const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);

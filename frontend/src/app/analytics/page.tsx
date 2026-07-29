@@ -1,17 +1,19 @@
 /* ── Analytics View Page ────────────────────────────────────────────
 
-   Placeholder for Phase 3+.
+   Redirects to /?tab=analytics for backward compatibility.
 */
 
 "use client";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { AnalyticsView } from "@/components/views/analytics-view";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AnalyticsPage() {
-  return (
-    <AppShell defaultTab="analytics">
-      <AnalyticsView />
-    </AppShell>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/?tab=analytics");
+  }, [router]);
+
+  return null;
 }

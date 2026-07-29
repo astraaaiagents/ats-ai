@@ -19,7 +19,7 @@ interface ExpandedDetailProps {
 }
 
 export function ExpandedDetail({ candidateId }: ExpandedDetailProps) {
-  const { setMode, setExpandedCandidate } = useCommandPanel();
+  const { setExpandedCandidate } = useCommandPanel();
 
   // Fetch live candidate data
   const { data: apiCandidate, isLoading, error } = useCandidate(candidateId);

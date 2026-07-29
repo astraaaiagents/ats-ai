@@ -6,7 +6,6 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface JobsFiltersProps {
@@ -29,14 +28,6 @@ const STATUS_LABELS: Record<string, string> = {
   needs_attention: "Needs Attention",
   on_track: "On Track",
   critical: "Critical",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  all: "",
-  healthy: "text-blue-500",
-  needs_attention: "text-yellow-500",
-  on_track: "text-green-500",
-  critical: "text-red-500",
 };
 
 export function JobsFilters({

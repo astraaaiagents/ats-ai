@@ -5,7 +5,7 @@
 
 "use client";
 
-import { TrendingUp, TrendingDown, CheckCircle2, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 

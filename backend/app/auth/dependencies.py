@@ -16,6 +16,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_session),
 ) -> User:
+
     payload = verify_token(credentials.credentials, expected_type="access")
     jti = payload.get("jti")
     if jti and await is_token_blacklisted(jti, db):

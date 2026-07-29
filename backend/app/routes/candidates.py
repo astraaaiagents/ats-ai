@@ -287,7 +287,7 @@ async def add_candidate_skill(
         years_experience=body.years_experience,
     )
     db.add(skill)
-    await db.commit()
+    await db.flush()
     await db.refresh(skill)
 
     return CandidateSkillResponse(
@@ -325,7 +325,7 @@ async def remove_candidate_skill(
         )
 
     await db.delete(skill)
-    await db.commit()
+    await db.flush()
 
     return {"message": "Skill removed"}
 
@@ -339,6 +339,6 @@ async def archive_candidate(
     """Archive a candidate (soft-delete)."""
     candidate = await get_candidate(db, candidate_id)
     candidate.status = "archived"
-    await db.commit()
+    await db.flush()
     await db.refresh(candidate)
     return _candidate_to_response(candidate)

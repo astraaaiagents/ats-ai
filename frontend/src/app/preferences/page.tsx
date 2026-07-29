@@ -1,17 +1,19 @@
 /* ── Preferences View Page ──────────────────────────────────────────
 
-   Explicit + implicit preferences.
+   Redirects to /?tab=preferences for backward compatibility.
 */
 
 "use client";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { PreferencesView } from "@/components/preferences/preferences-view";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PreferencesPage() {
-  return (
-    <AppShell defaultTab="preferences">
-      <PreferencesView />
-    </AppShell>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/?tab=preferences");
+  }, [router]);
+
+  return null;
 }

@@ -13,7 +13,6 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { api, getToken, setToken, clearTokens } from "@/lib/api/client";
 import type { UserResponse } from "@/lib/api/types";
 
 interface AuthContextValue {
@@ -33,47 +32,57 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Restore session from localStorage on mount
-    const token = getToken();
-    if (token) {
-      // Validate token by fetching user profile
-      api
-        .get<UserResponse>("/users/me")
-        .then((u) => setUser(u))
-        .catch(() => clearTokens())
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
+    async function ensureToken() {
+      try {
+        const existingToken = localStorage.getItem("access_token");
+        if (!existingToken) {
+          const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+          const res = await fetch(`${apiBase}/auth/dev-token`, { method: "POST" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.access_token) {
+              localStorage.setItem("access_token", data.access_token);
+              if (data.refresh_token) {
+                localStorage.setItem("refresh_token", data.refresh_token);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to acquire dev token:", err);
+      } finally {
+        setIsLoading(false);
+      }
     }
+    ensureToken();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const data = await api.post<{ access_token: string; refresh_token: string }>(
-      "/auth/login",
-      { email, password }
-    );
-    setToken(data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
-    // Fetch user profile
-    const user = await api.get<UserResponse>("/users/me");
-    setUser(user);
+    // No-op — login disabled
+    void email;
+    void password;
   };
 
   const logout = () => {
-    clearTokens();
-    setUser(null);
+    // No-op — login disabled
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: {
+          id: "dev-user",
+          email: "dev@localhost",
+          role: "recruiter",
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: true,
         login,
         logout,
       }}

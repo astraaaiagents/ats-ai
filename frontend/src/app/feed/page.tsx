@@ -1,17 +1,19 @@
 /* ── Feed View Page ─────────────────────────────────────────────────
 
-   Default route. Shows the activity feed.
+   Redirects to /?tab=feed for backward compatibility.
 */
 
 "use client";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { FeedView } from "@/components/feed/feed-view";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function FeedPage() {
-  return (
-    <AppShell defaultTab="feed">
-      <FeedView />
-    </AppShell>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/?tab=feed");
+  }, [router]);
+
+  return null;
 }

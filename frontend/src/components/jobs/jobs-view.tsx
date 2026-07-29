@@ -23,7 +23,9 @@ export function JobsView() {
   // Transform client contacts to Job format
   const jobs = useMemo<Job[]>(() => {
     if (!contactsResponse) return [];
-    const contacts = Array.isArray(contactsResponse) ? contactsResponse : (contactsResponse as any).data || [];
+    const contacts = Array.isArray(contactsResponse)
+      ? contactsResponse
+      : (contactsResponse as { data?: Array<Record<string, unknown>> }).data || [];
     return contacts.map((contact: Record<string, unknown>) => ({
       id: String(contact.id || ""),
       req_id: String(contact.req_id || contact.job_id || ""),

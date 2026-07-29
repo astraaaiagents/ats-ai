@@ -6,7 +6,6 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { FitBadge } from "@/components/shared/fit-badge";
 import { useCommandPanel } from "@/lib/store/ui";
 
@@ -61,14 +60,14 @@ export function SearchResults({ query }: SearchResultsProps) {
           Jobs
         </div>
         <div className="rounded-card px-2 py-2 text-xs text-text-tertiary">
-          No jobs match "{query}"
+          No jobs match &quot;{query}&quot;
         </div>
 
         <div className="px-2 py-1.5 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider">
           Conversations
         </div>
         <div className="rounded-card px-2 py-2 text-xs text-text-tertiary">
-          No conversations match "{query}"
+          No conversations match &quot;{query}&quot;
         </div>
       </div>
     </ScrollArea>

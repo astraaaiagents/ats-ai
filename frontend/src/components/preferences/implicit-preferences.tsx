@@ -9,7 +9,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye } from "lucide-react";
 import { usePreferences } from "@/lib/api/hooks";
 
 interface ImplicitPreference {
@@ -20,19 +20,15 @@ interface ImplicitPreference {
   evidence: string;
 }
 
-const CONFIDENCE_COLORS: Record<string, string> = {
-  High: "text-success",
-  Medium: "text-warning",
-  Low: "text-danger",
-};
-
 export function ImplicitPreferences() {
   const { data: prefs, isLoading } = usePreferences();
   const [showingEvidence, setShowingEvidence] = useState<string | null>(null);
 
+  const implicitScores = prefs?.implicit_scores;
+
   const patterns = useMemo<ImplicitPreference[]>(() => {
-    if (!prefs?.implicit_scores) return [];
-    return Object.entries(prefs.implicit_scores)
+    if (!implicitScores) return [];
+    return Object.entries(implicitScores)
       .filter(([, score]) => score !== 0.5) // Only show non-neutral scores
       .map(([pattern, score]) => {
         const strength = Math.round(score * 100);
@@ -47,7 +43,7 @@ export function ImplicitPreferences() {
         };
       })
       .sort((a, b) => Math.abs(b.strength - 50) - Math.abs(a.strength - 50));
-  }, [prefs?.implicit_scores]);
+  }, [implicitScores]);
 
   if (isLoading) {
     return <div className="text-sm text-text-tertiary">Loading learned patterns...</div>;

@@ -40,7 +40,7 @@ async def create_organization(
         kms_key_id=body.kms_key_id,
     )
     db.add(org)
-    await db.commit()
+    await db.flush()
     await db.refresh(org)
 
     return OrganizationResponse(
@@ -129,7 +129,7 @@ async def update_organization(
     for key, value in update_data.items():
         setattr(org, key, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(org)
 
     return OrganizationResponse(

@@ -10,18 +10,41 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-interface ChatMessage {
+export interface CandidateCardData {
+  first_name?: string;
+  last_name?: string;
+  current_title?: string;
+}
+
+export interface OutreachCardData {
+  subject?: string;
+  body?: string;
+}
+
+export interface ChatCard {
+  type: string;
+  data?: CandidateCardData | OutreachCardData | Record<string, unknown>;
+  fitScore?: number;
+}
+
+export interface ChatAction {
+  id?: string;
+  label?: string;
+  payload?: unknown;
+}
+
+export interface ChatMessage {
   id: string;
   role: "user" | "agent" | "system";
   content: string;
   timestamp: string;
-  cards?: Record<string, any>[];
-  actions?: Record<string, any>[];
+  cards?: ChatCard[];
+  actions?: ChatAction[];
 }
 
 interface CommandMessageProps {
   message: ChatMessage;
-  onAction?: (actionId: string, payload: any) => void;
+  onAction?: (actionId: string, payload: unknown) => void;
 }
 
 const ROLE_CONFIG = {
@@ -80,7 +103,7 @@ export function CommandMessage({ message, onAction }: CommandMessageProps) {
             <div className="mt-3 flex flex-col gap-2">
               {message.cards.map((card, i) => {
                 if (card.type === "candidate") {
-                  const data = card.data as any;
+                  const data = card.data as CandidateCardData | undefined;
                   return (
                     <div key={i} className="rounded-md border border-border bg-surface p-3 text-xs">
                       <div className="font-semibold text-text-primary">
@@ -89,12 +112,12 @@ export function CommandMessage({ message, onAction }: CommandMessageProps) {
                       <div className="text-text-secondary">{data?.current_title}</div>
                       <div className="mt-1 flex items-center justify-between text-[10px]">
                         <span className="text-text-tertiary">Fit Score:</span>
-                        <span className="font-medium text-success">{Math.round((card.fitScore as number || 0) * 100)}%</span>
+                        <span className="font-medium text-success">{Math.round((card.fitScore || 0) * 100)}%</span>
                       </div>
                     </div>
                   );
                 } else if (card.type === "outreach") {
-                  const data = card.data as any;
+                  const data = card.data as OutreachCardData | undefined;
                   return (
                     <div key={i} className="rounded-md border border-border bg-surface p-3 text-xs">
                       <div className="font-semibold text-text-primary">Draft: {data?.subject}</div>

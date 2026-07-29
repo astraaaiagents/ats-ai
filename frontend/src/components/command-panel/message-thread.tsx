@@ -6,21 +6,12 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CommandMessage } from "./command-message";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "agent" | "system";
-  content: string;
-  timestamp: string;
-  cards?: Record<string, any>[];
-  actions?: Record<string, any>[];
-}
+import { CommandMessage, type ChatMessage } from "./command-message";
 
 interface MessageThreadProps {
   messages: ChatMessage[];
   isStreaming: boolean;
-  onAction?: (actionId: string, payload: any) => void;
+  onAction?: (actionId: string, payload: unknown) => void;
 }
 
 export function MessageThread({ messages, isStreaming, onAction }: MessageThreadProps) {

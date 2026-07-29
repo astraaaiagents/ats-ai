@@ -29,7 +29,6 @@ export function QuickReviewOverlay({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [approved, setApproved] = useState<string[]>([]);
   const [rejected, setRejected] = useState<string[]>([]);
-  const [showSummary, setShowSummary] = useState(false);
 
   const batch = candidates.slice(0, batch_size);
   const current = batch[currentIndex];
@@ -50,7 +49,7 @@ export function QuickReviewOverlay({
   // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (showSummary) return;
+      if (isComplete) return;
       if (e.key === "ArrowLeft") handleReject();
       if (e.key === "ArrowRight") handleApprove();
       if (e.key === " ") {
@@ -61,7 +60,7 @@ export function QuickReviewOverlay({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleApprove, handleReject, onClose, showSummary]);
+  }, [handleApprove, handleReject, onClose, isComplete]);
 
   if (isComplete || batch.length === 0) {
     return (

@@ -3,7 +3,7 @@ from fastapi import Query
 
 def PaginationParams(
     cursor: str | None = Query(None, description="Pagination cursor"),
-    limit: int = Query(25, ge=1, le=500, description="Number of items per page"),
+    limit: int = Query(25, ge=1, le=100, description="Number of items per page"),
     sort: str | None = Query(None, description="Sort field and direction (e.g., created_at:desc)"),
 ):
     """FastAPI dependency for pagination query parameters."""

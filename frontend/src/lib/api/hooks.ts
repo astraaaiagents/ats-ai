@@ -18,12 +18,10 @@ import {
 } from "@tanstack/react-query";
 import { api } from "./client";
 import type {
-  AgentMessageResponse,
   ConversationHistoryResponse,
   ConversationRequest,
   PreferenceResponse,
   PreferenceUpdate,
-  ProactiveAlertResponse,
   ProactiveAlertsResponse,
   ActionLogEntry,
   CandidateResponse,
@@ -63,6 +61,7 @@ export async function sendConversation(
     const token = localStorage.getItem("access_token");
     return token || "";
   })) {
+    console.log("[SSE] event received:", event);
     events.push(event);
     onToken?.(event);
   }
@@ -177,13 +176,18 @@ export function useActionLog(opts?: {
   return useQuery({
     queryKey: [...QUERY_KEYS.actionLog, opts],
     queryFn: async () => {
-      const data = await api.get<Record<string, unknown>>(
+      interface ActionLogApiResponse {
+        data?: ActionLogEntry[];
+        results?: ActionLogEntry[];
+        total?: number;
+      }
+      const res = await api.get<ActionLogApiResponse>(
         `/agent/action-log?${params.toString()}`,
       );
       return {
-        data: (data as any).data ?? (data as any).results ?? [],
-        total: (data as any).total ?? 0,
-      } as { data: ActionLogEntry[]; total: number };
+        data: res.data ?? res.results ?? [],
+        total: res.total ?? 0,
+      };
     },
     staleTime: 60_000,
   });

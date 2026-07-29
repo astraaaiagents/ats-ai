@@ -1,17 +1,19 @@
 /* ── Pipeline View Page ─────────────────────────────────────────────
 
-   Kanban pipeline view.
+   Redirects to /?tab=pipeline for backward compatibility.
 */
 
 "use client";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { PipelineView } from "@/components/pipeline/pipeline-view";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PipelinePage() {
-  return (
-    <AppShell defaultTab="pipeline">
-      <PipelineView />
-    </AppShell>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/?tab=pipeline");
+  }, [router]);
+
+  return null;
 }
