@@ -19,11 +19,36 @@ from app.schemas.client_contact import (
 client_contacts_router = APIRouter(prefix="/client-contacts", tags=["client-contacts"])
 
 
+def _safe_str(val):
+    return val if isinstance(val, str) else None
+
+
+def _format_client_contact_response(c) -> ClientContactResponse:
+    created_at = c.created_at.isoformat() if hasattr(c.created_at, "isoformat") else str(c.created_at)
+    updated_at = c.updated_at.isoformat() if hasattr(c.updated_at, "isoformat") else str(c.updated_at)
+
+    return ClientContactResponse(
+        id=str(c.id),
+        email=c.email,
+        first_name=c.first_name,
+        last_name=c.last_name,
+        phone=_safe_str(getattr(c, "phone", None)),
+        organization_name=_safe_str(getattr(c, "organization_name", None)),
+        title=_safe_str(getattr(c, "title", None)),
+        location=_safe_str(getattr(c, "location", None)),
+        description=_safe_str(getattr(c, "description", None)),
+        status=_safe_str(getattr(c, "status", None)),
+        is_active=bool(getattr(c, "is_active", True)),
+        created_at=created_at,
+        updated_at=updated_at,
+    )
+
+
 @client_contacts_router.get("", response_model=None)
 async def list_client_contacts(
     pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role(["admin", "manager"])),
 ):
     """List client contacts with pagination."""
     org_id = getattr(current_user, "organization_id", None)
@@ -64,24 +89,7 @@ async def list_client_contacts(
     if has_more:
         contacts = contacts[:pagination.limit]
 
-    data = [
-        ClientContactResponse(
-            id=str(c.id),
-            email=c.email,
-            first_name=c.first_name,
-            last_name=c.last_name,
-            phone=c.phone,
-            organization_name=c.organization_name,
-            title=c.title,
-            location=c.location,
-            description=c.description,
-            status=c.status,
-            is_active=c.is_active,
-            created_at=c.created_at.isoformat(),
-            updated_at=c.updated_at.isoformat(),
-        )
-        for c in contacts
-    ]
+    data = [_format_client_contact_response(c) for c in contacts]
 
     return paginated_response(data, total, pagination.limit, pagination.sort)
 
@@ -125,21 +133,7 @@ async def create_client_contact(
     await db.flush()
     await db.refresh(contact)
 
-    return ClientContactResponse(
-        id=str(contact.id),
-        email=contact.email,
-        first_name=contact.first_name,
-        last_name=contact.last_name,
-        phone=contact.phone,
-        organization_name=contact.organization_name,
-        title=contact.title,
-        location=contact.location,
-        description=contact.description,
-        status=contact.status,
-        is_active=contact.is_active,
-        created_at=contact.created_at.isoformat(),
-        updated_at=contact.updated_at.isoformat(),
-    )
+    return _format_client_contact_response(contact)
 
 
 @client_contacts_router.put("/{contact_id}", response_model=ClientContactResponse)
@@ -190,21 +184,7 @@ async def update_client_contact(
     await db.flush()
     await db.refresh(contact)
 
-    return ClientContactResponse(
-        id=str(contact.id),
-        email=contact.email,
-        first_name=contact.first_name,
-        last_name=contact.last_name,
-        phone=contact.phone,
-        organization_name=contact.organization_name,
-        title=contact.title,
-        location=contact.location,
-        description=contact.description,
-        status=contact.status,
-        is_active=contact.is_active,
-        created_at=contact.created_at.isoformat(),
-        updated_at=contact.updated_at.isoformat(),
-    )
+    return _format_client_contact_response(contact)
 
 
 @client_contacts_router.delete("/{contact_id}", response_model=ClientContactResponse)
@@ -234,18 +214,4 @@ async def delete_client_contact(
     await db.flush()
     await db.refresh(contact)
 
-    return ClientContactResponse(
-        id=str(contact.id),
-        email=contact.email,
-        first_name=contact.first_name,
-        last_name=contact.last_name,
-        phone=contact.phone,
-        organization_name=contact.organization_name,
-        title=contact.title,
-        location=contact.location,
-        description=contact.description,
-        status=contact.status,
-        is_active=contact.is_active,
-        created_at=contact.created_at.isoformat(),
-        updated_at=contact.updated_at.isoformat(),
-    )
+    return _format_client_contact_response(contact)
