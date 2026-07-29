@@ -7,6 +7,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ats_ai
       - REDIS_URL=redis://redis:6379/0
+      - CORS_ORIGINS=["http://localhost:3000","http://frontend:3000"]
     depends_on:
       db:
         condition: service_healthy
@@ -14,11 +15,13 @@ services:
         condition: service_started
 
   db:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ats_ai
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,6 +32,18 @@ services:
 
   redis:
     image: redis:7-alpine
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

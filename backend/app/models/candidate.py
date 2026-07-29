@@ -92,6 +92,11 @@ class Candidate(Base):
             unique=True,
             postgresql_where=text("status != 'archived'"),
         ),
+        Index(
+            "ix_candidates_fts_search",
+            text("to_tsvector('english', coalesce(first_name, '') || ' ' || coalesce(last_name, '') || ' ' || coalesce(current_title, ''))"),
+            postgresql_using="gin",
+        ),
     )
 
     def __init__(self, **kwargs: Any) -> None:

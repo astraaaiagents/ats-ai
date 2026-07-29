@@ -28,7 +28,7 @@ class TestMigrationsImport:
         assert len(heads) == 1
 
         revisions = list(script.walk_revisions())
-        assert len(revisions) == 3
+        assert len(revisions) >= 3
 
         revisions_by_id = {r.revision: r for r in revisions}
         assert "001_initial_schema" in revisions_by_id

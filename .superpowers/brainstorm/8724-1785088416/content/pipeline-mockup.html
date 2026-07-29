@@ -1,0 +1,208 @@
+<h2>View 2: Pipeline / Kanban — Full Mockup</h2>
+<p class="subtitle">Job-scoped visual pipeline with persistent Command Panel on the right</p>
+
+<div class="mockup" style="margin-bottom: 0;">
+  <div class="mockup-header">
+    <span style="display:flex; gap: 16px; align-items:center;">
+      <span style="font-weight:600;">⚡ ATS Agent</span>
+      <span style="font-size:13px; color:#64748b;">Feed</span>
+      <span style="font-size:13px; color:#e2e8f0; font-weight:500;">📊 Pipeline</span>
+      <span style="font-size:13px; color:#64748b;">| Jobs | Preferences | Analytics</span>
+      <span style="margin-left:auto; font-size:12px; color:#64748b;">🔔 3</span>
+    </span>
+  </div>
+  <div class="mockup-body" style="display:flex; padding:0; min-height: 480px;">
+    <!-- Left: Pipeline -->
+    <div style="flex:1; padding:16px; border-right: 1px solid #334155; overflow-x:auto;">
+      <!-- Job context bar -->
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <span style="font-size:14px; font-weight:600; color:#e2e8f0;">📋 TCS — Java Lead</span>
+        <span style="background:#1e293b; color:#64748b; font-size:12px; padding:2px 8px; border-radius:4px;">Req #TCS-2026-042</span>
+        <span style="margin-left:auto; font-size:12px; color:#3b82f6;">⚡ 4 new since yesterday</span>
+      </div>
+
+      <!-- Pipeline columns -->
+      <div style="display:flex; gap:12px; min-height: 380px;">
+
+        <!-- Sourced -->
+        <div style="flex:1; background:#0f172a; border-radius:8px; padding:10px; min-width:160px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:13px; font-weight:600; color:#94a3b8;">🔄 Sourced</span>
+            <span style="background:#334155; color:#94a3b8; font-size:11px; padding:1px 7px; border-radius:10px;">12</span>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px; margin-bottom:8px; border-left:3px solid #3b82f6;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">Jane Doe</div>
+            <div style="font-size:11px; color:#64748b;">Sr. Java Developer · 7yr</div>
+            <div style="display:flex; align-items:center; gap:4px; margin-top:6px;">
+              <span style="color:#facc15; font-size:11px;">★★★★★</span>
+              <span style="font-size:12px; color:#3b82f6; font-weight:600;">92%</span>
+            </div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#3b82f622; color:#3b82f6; font-size:10px; padding:1px 6px; border-radius:3px;">AWS</span>
+              <span style="background:#3b82f622; color:#3b82f6; font-size:10px; padding:1px 6px; border-radius:3px;">Microservices</span>
+            </div>
+            <div style="font-size:11px; color:#10b981; margin-top:6px;">→ Review</div>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px; margin-bottom:8px;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">John Smith</div>
+            <div style="font-size:11px; color:#64748b;">Sr. Python Dev · 5yr</div>
+            <div style="display:flex; align-items:center; gap:4px; margin-top:6px;">
+              <span style="color:#facc15; font-size:11px;">★★★★☆</span>
+              <span style="font-size:12px; color:#94a3b8; font-weight:600;">87%</span>
+            </div>
+            <div style="font-size:11px; color:#10b981; margin-top:6px;">→ Review</div>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px; border:1px dashed #334155;">
+            <div style="font-size:11px; color:#64748b;">🤖 Agent: +3 new matches</div>
+            <div style="font-size:12px; color:#3b82f6; margin-top:4px;">[View in Command Panel]</div>
+          </div>
+        </div>
+
+        <!-- Reviewing -->
+        <div style="flex:1; background:#0f172a; border-radius:8px; padding:10px; min-width:160px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:13px; font-weight:600; color:#e2e8f0;">🔍 Reviewing</span>
+            <span style="background:#facc1522; color:#facc15; font-size:11px; padding:1px 7px; border-radius:10px;">3</span>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px; margin-bottom:8px; border-left:3px solid #facc15;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">Alice Wong</div>
+            <div style="font-size:11px; color:#64748b;">Tech Lead · 10yr</div>
+            <div style="display:flex; align-items:center; gap:4px; margin-top:6px;">
+              <span style="color:#facc15; font-size:11px;">★★★★☆</span>
+              <span style="font-size:12px; color:#facc15; font-weight:600;">88%</span>
+            </div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#facc1522; color:#facc15; font-size:10px; padding:1px 6px; border-radius:3px;">Leadership</span>
+              <span style="background:#facc1522; color:#facc15; font-size:10px; padding:1px 6px; border-radius:3px;">Java</span>
+            </div>
+            <div style="font-size:11px; color:#64748b; margin-top:6px;">⏳ Gap: no cloud exp.</div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#10b981; color:white; font-size:10px; padding:2px 8px; border-radius:3px;">✓ Approve</span>
+              <span style="background:#ef4444; color:white; font-size:10px; padding:2px 8px; border-radius:3px;">✗ Reject</span>
+              <span style="background:#334155; color:#94a3b8; font-size:10px; padding:2px 8px; border-radius:3px;">↔ Compare</span>
+            </div>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">Raj Patel</div>
+            <div style="font-size:11px; color:#64748b;">Java Dev · 6yr</div>
+            <div style="font-size:12px; color:#94a3b8; font-weight:600; margin-top:4px;">81%</div>
+          </div>
+        </div>
+
+        <!-- Submitted -->
+        <div style="flex:1; background:#0f172a; border-radius:8px; padding:10px; min-width:160px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:13px; font-weight:600; color:#e2e8f0;">📨 Submitted</span>
+            <span style="background:#3b82f622; color:#3b82f6; font-size:11px; padding:1px 7px; border-radius:10px;">2</span>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px; margin-bottom:8px; border-left:3px solid #3b82f6;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">Bob Chen</div>
+            <div style="font-size:11px; color:#64748b;">Submitted 2d ago</div>
+            <div style="font-size:11px; color:#facc15; margin-top:4px;">⏳ Awaiting HM review</div>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">Maria Garcia</div>
+            <div style="font-size:11px; color:#64748b;">Submitted 5d ago</div>
+            <div style="font-size:11px; color:#10b981; margin-top:4px;">✓ HM approved — pending interview</div>
+          </div>
+        </div>
+
+        <!-- Interviewing -->
+        <div style="flex:1; background:#0f172a; border-radius:8px; padding:10px; min-width:160px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:13px; font-weight:600; color:#e2e8f0;">📅 Interviewing</span>
+            <span style="background:#8b5cf622; color:#8b5cf6; font-size:11px; padding:1px 7px; border-radius:10px;">1</span>
+          </div>
+
+          <div style="background:#1e293b; border-radius:6px; padding:10px; border-left:3px solid #8b5cf6;">
+            <div style="font-size:13px; font-weight:500; color:#e2e8f0;">Carol Martinez</div>
+            <div style="font-size:11px; color:#64748b;">Interview: Jul 28 · 2:00 PM</div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#8b5cf622; color:#8b5cf6; font-size:10px; padding:1px 6px; border-radius:3px;">Google Meet</span>
+            </div>
+            <div style="font-size:11px; color:#3b82f6; margin-top:4px;">[Reschedule] [Add Feedback]</div>
+          </div>
+        </div>
+
+        <!-- Placed -->
+        <div style="flex:1; background:#0f172a; border-radius:8px; padding:10px; min-width:120px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:13px; font-weight:600; color:#e2e8f0;">🎉 Placed</span>
+            <span style="background:#10b98122; color:#10b981; font-size:11px; padding:1px 7px; border-radius:10px;">0</span>
+          </div>
+          <div style="background:#1e293b; border-radius:6px; padding:20px 10px; text-align:center;">
+            <div style="font-size:12px; color:#64748b;">No placements yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right: Command Panel (identical to Feed view) -->
+    <div style="width:340px; padding:16px; display:flex; flex-direction:column; background:#0f172a; border-left:1px solid #334155;">
+      <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:#e2e8f0;">💬 Command</div>
+
+      <div style="flex:1; overflow-y:auto; margin-bottom:12px;">
+        <!-- Agent suggestion triggered by pipeline context -->
+        <div style="background:#1e293b; border-radius:8px; padding:10px; margin-bottom:8px; border-left:3px solid #3b82f6;">
+          <div style="font-size:12px; color:#3b82f6; margin-bottom:4px;">Agent <span style="background:#3b82f622; color:#3b82f6; font-size:10px; padding:1px 5px; border-radius:3px;">PIPELINE SUGGESTION</span></div>
+          <div style="font-size:13px; color:#cbd5e1;">Alice Wong in Reviewing has a <strong>gap in cloud experience</strong>. I found 2 candidates without that gap. Want me to swap them in?</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span style="background:#3b82f6; color:white; font-size:11px; padding:3px 10px; border-radius:4px;">Show me</span>
+            <span style="background:#334155; color:#94a3b8; font-size:11px; padding:3px 10px; border-radius:4px;">Dismiss</span>
+          </div>
+        </div>
+
+        <div style="background:#1e293b; border-radius:8px; padding:10px; margin-bottom:8px;">
+          <div style="font-size:12px; color:#10b981; margin-bottom:4px;">You</div>
+          <div style="font-size:13px; color:#cbd5e1;">Move Jane Doe to Reviewing</div>
+        </div>
+
+        <div style="background:#1e293b; border-radius:8px; padding:10px; margin-bottom:8px;">
+          <div style="font-size:12px; color:#3b82f6; margin-bottom:4px;">Agent</div>
+          <div style="font-size:13px; color:#cbd5e1;">Done. Jane Doe moved to Reviewing. Current pipeline: Sourced (11) → Reviewing (4) → Submitted (2) → Interviewing (1) → Placed (0)</div>
+        </div>
+      </div>
+
+      <div style="background:#1e293b; border-radius:8px; padding:10px;">
+        <div style="font-size:13px; color:#94a3b8; margin-bottom:8px;">Move candidates, ask about pipeline... <span style="color:#64748b; font-size:11px;">/ for commands</span></div>
+        <div style="display:flex; gap:4px;">
+          <span style="background:#334155; color:#64748b; font-size:11px; padding:2px 8px; border-radius:4px;">📎</span>
+          <span style="background:#334155; color:#64748b; font-size:11px; padding:2px 8px; border-radius:4px;">🎤</span>
+          <span style="margin-left:auto; background:#3b82f6; color:white; font-size:11px; padding:2px 12px; border-radius:4px;">Send</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div style="font-size:12px; color:#64748b; margin-bottom:6px;">Pipeline Quick Actions</div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+          <span style="background:#334155; color:#94a3b8; font-size:11px; padding:3px 8px; border-radius:12px;">/move</span>
+          <span style="background:#334155; color:#94a3b8; font-size:11px; padding:3px 8px; border-radius:12px;">/approve</span>
+          <span style="background:#334155; color:#94a3b8; font-size:11px; padding:3px 8px; border-radius:12px;">/compare</span>
+          <span style="background:#334155; color:#94a3b8; font-size:11px; padding:3px 8px; border-radius:12px;">/bottleneck</span>
+          <span style="background:#334155; color:#94a3b8; font-size:11px; padding:3px 8px; border-radius:12px;">/reschedule</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex; gap:12px; margin-top:16px;">
+  <div style="flex:1; background:#1e293b; border-radius:8px; padding:12px;">
+    <div style="font-size:13px; font-weight:600; color:#e2e8f0; margin-bottom:4px;">Pipeline Features</div>
+    <div style="font-size:12px; color:#94a3b8;">5-stage kanban: Sourced → Reviewing → Submitted → Interviewing → Placed. Fit score badges, skill tags, gap indicators, approve/reject inline. Agent suggests moves from the command panel.</div>
+  </div>
+  <div style="flex:1; background:#1e293b; border-radius:8px; padding:12px;">
+    <div style="font-size:13px; font-weight:600; color:#e2e8f0; margin-bottom:4px;">Agent-Pipeline Integration</div>
+    <div style="font-size:12px; color:#94a3b8;">Agent monitors pipeline and proactively suggests: "Alice has a cloud gap — I found 2 alternatives." Recruiter acts via command panel or directly on cards. Agent also tracks bottlenecks (e.g., "3 candidates stuck in Reviewing for 5+ days").</div>
+  </div>
+</div>
+
+<p style="margin-top:20px; font-size:14px; color:#94a3b8;">Good? I'll show the Jobs list view and then the Command Panel expanded behavior next.</p>

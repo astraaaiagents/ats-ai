@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import require_role
+from app.auth.dependencies import get_current_user, require_role
 from app.database import get_session
 from app.middleware.error_handler import AppException
 from fastapi import Depends
@@ -24,10 +24,10 @@ client_contacts_router = APIRouter(prefix="/client-contacts", tags=["client-cont
 async def list_client_contacts(
     pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
-    _current_user=Depends(require_role(["admin", "manager"])),
+    current_user=Depends(get_current_user),
 ):
-    """List client contacts with pagination. Admin/Manager only."""
-    org_id = getattr(_current_user, "organization_id", None)
+    """List client contacts with pagination."""
+    org_id = getattr(current_user, "organization_id", None)
 
     count_result = await db.execute(
         select(func.count()).where(
@@ -72,6 +72,11 @@ async def list_client_contacts(
             first_name=c.first_name,
             last_name=c.last_name,
             phone=c.phone,
+            organization_name=c.organization_name,
+            title=c.title,
+            location=c.location,
+            description=c.description,
+            status=c.status,
             is_active=c.is_active,
             created_at=c.created_at.isoformat(),
             updated_at=c.updated_at.isoformat(),
@@ -111,6 +116,11 @@ async def create_client_contact(
         first_name=body.first_name,
         last_name=body.last_name,
         phone=body.phone,
+        organization_name=body.organization_name,
+        title=body.title,
+        location=body.location,
+        description=body.description,
+        status=body.status or "active",
     )
     db.add(contact)
     await db.commit()
@@ -122,6 +132,11 @@ async def create_client_contact(
         first_name=contact.first_name,
         last_name=contact.last_name,
         phone=contact.phone,
+        organization_name=contact.organization_name,
+        title=contact.title,
+        location=contact.location,
+        description=contact.description,
+        status=contact.status,
         is_active=contact.is_active,
         created_at=contact.created_at.isoformat(),
         updated_at=contact.updated_at.isoformat(),
@@ -182,6 +197,11 @@ async def update_client_contact(
         first_name=contact.first_name,
         last_name=contact.last_name,
         phone=contact.phone,
+        organization_name=contact.organization_name,
+        title=contact.title,
+        location=contact.location,
+        description=contact.description,
+        status=contact.status,
         is_active=contact.is_active,
         created_at=contact.created_at.isoformat(),
         updated_at=contact.updated_at.isoformat(),
@@ -221,6 +241,11 @@ async def delete_client_contact(
         first_name=contact.first_name,
         last_name=contact.last_name,
         phone=contact.phone,
+        organization_name=contact.organization_name,
+        title=contact.title,
+        location=contact.location,
+        description=contact.description,
+        status=contact.status,
         is_active=contact.is_active,
         created_at=contact.created_at.isoformat(),
         updated_at=contact.updated_at.isoformat(),

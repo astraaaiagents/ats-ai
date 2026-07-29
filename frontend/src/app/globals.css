@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/* ── Warm Indigo Theme ────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --surface-base: #faf9f7;
+  --surface-card: #f5f4f1;
+  --surface-hover: #eeedea;
+  --surface-elevated: #ffffff;
+
+  /* Primary */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #eef2ff;
+
+  /* AI / Agent */
+  --ai: #9333ea;
+  --ai-hover: #7e22ce;
+  --ai-light: #f3e8ff;
+
+  /* Text */
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-tertiary: #a8a29e;
+
+  /* Semantic */
+  --success: #16a34a;
+  --success-light: #f0fdf4;
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --info: #0284c7;
+  --info-light: #f0f9ff;
+
+  /* Borders */
+  --border: #e7e5e4;
+  --border-focus: #4f46e5;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  /* Radii */
+  --radius-card: 8px;
+  --radius-button: 6px;
+  --radius-badge: 4px;
+  --radius-input: 6px;
+
+  /* Font */
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-primary);
+  --color-surface: var(--surface-base);
+  --color-card: var(--surface-card);
+  --color-hover: var(--surface-hover);
+  --color-elevated: var(--surface-elevated);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-ai: var(--ai);
+  --color-ai-hover: var(--ai-hover);
+  --color-ai-light: var(--ai-light);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-danger: var(--danger);
+  --color-danger-light: var(--danger-light);
+  --color-info: var(--info);
+  --color-info-light: var(--info-light);
+  --color-border: var(--border);
+  --color-border-focus: var(--border-focus);
+  --font-sans: var(--font-inter);
+}
+
+/* ── Reset ────────────────────────────────────────────────────────── */
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-inter);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus ────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-button);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ── Animations ───────────────────────────────────────────────────── */
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}

@@ -1,0 +1,91 @@
+<h2>Hybrid Interaction Paradigm</h2>
+<p class="subtitle">Three modes, one unified interface — recruiter chooses how to work</p>
+
+<div class="section">
+  <h3>The Core Idea</h3>
+  <p>The three paradigms aren't mutually exclusive — they're views into the same data. The hybrid gives recruiters <strong>interaction choice</strong> without context-switching cost.</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="primary" onclick="toggleSelect(this)" style="border-color: #3b82f6;">
+    <div class="letter" style="background: #3b82f6;">1</div>
+    <div class="content">
+      <h3>Primary: Activity Feed</h3>
+      <p>Chronological timeline of agent suggestions, recruiter actions, and system events. The default view. Agent posts candidate matches, insights, and learning digests. Recruiter acts inline.</p>
+      <div style="margin-top: 8px; font-size: 13px; color: #94a3b8;">Best for: daily workflow, agent interaction, multi-job awareness</div>
+    </div>
+  </div>
+  <div class="option" data-choice="tab" onclick="toggleSelect(this)" style="border-color: #8b5cf6;">
+    <div class="letter" style="background: #8b5cf6;">2</div>
+    <div class="content">
+      <h3>Tab: Pipeline / Kanban</h3>
+      <p>Job-scoped visual pipeline: Sourced → Reviewing → Submitted → Interviewing → Placed. Accessible via tab or per-job link from feed items. Drag-and-drop stage transitions. Agent suggests moves.</p>
+      <div style="margin-top: 8px; font-size: 13px; color: #94a3b8;">Best for: bottleneck spotting, stage management, AM oversight</div>
+    </div>
+  </div>
+  <div class="option" data-choice="overlay" onclick="toggleSelect(this)" style="border-color: #10b981;">
+    <div class="letter" style="background: #10b981;">3</div>
+    <div class="content">
+      <h3>Overlay: Command Bar</h3>
+      <p>⌘K accessible from any view. Natural language or slash commands: <code>/find candidates for TCS Java</code>, <code>/submit Jane Doe to Wipro PM</code>, <code>what's my pipeline look like?</code>. Results inline or navigate to relevant view.</p>
+      <div style="margin-top: 8px; font-size: 13px; color: #94a3b8;">Best for: power users, bulk ops, quick actions without leaving flow</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>How They Connect</h3>
+  <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 200px; background: #1e293b; border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; color: #3b82f6; margin-bottom: 8px;">From Feed → Pipeline</div>
+      <div style="font-size: 14px; color: #cbd5e1;">Click any candidate card or "View Pipeline" on a job card → opens Pipeline tab scoped to that job</div>
+    </div>
+    <div style="flex: 1; min-width: 200px; background: #1e293b; border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; color: #8b5cf6; margin-bottom: 8px;">From Pipeline → Command</div>
+      <div style="font-size: 14px; color: #cbd5e1;">⌘K while in Pipeline view. "submit selected", "schedule interview for Alice" → overlays command without leaving context</div>
+    </div>
+    <div style="flex: 1; min-width: 200px; background: #1e293b; border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; color: #10b981; margin-bottom: 8px;">From Command → Feed</div>
+      <div style="font-size: 14px; color: #cbd5e1;">Command results post into the feed as a new entry. "Found 12 candidates for TCS Java" appears as a feed item with candidate cards</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Navigation Model</h3>
+  <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+    <span style="background: #334155; padding: 6px 14px; border-radius: 20px; font-size: 13px;">📋 Feed</span>
+    <span style="color: #64748b;">→</span>
+    <span style="background: #334155; padding: 6px 14px; border-radius: 20px; font-size: 13px;">📊 Pipeline</span>
+    <span style="color: #64748b;">→</span>
+    <span style="background: #334155; padding: 6px 14px; border-radius: 20px; font-size: 13px;">🏢 Jobs</span>
+    <span style="color: #64748b;">→</span>
+    <span style="background: #334155; padding: 6px 14px; border-radius: 20px; font-size: 13px;">⚙️ Preferences</span>
+    <span style="color: #64748b;">→</span>
+    <span style="background: #334155; padding: 6px 14px; border-radius: 20px; font-size: 13px;">📈 Analytics</span>
+  </div>
+  <p style="margin-top: 12px; font-size: 14px; color: #94a3b8;">Top-level tab bar + persistent ⌘K. No sidebars — maximize content space. Command bar is modeless (doesn't block the view).</p>
+</div>
+
+<div class="pros-cons" style="margin-top: 24px;">
+  <div class="pros">
+    <h4>Strengths</h4>
+    <ul>
+      <li>Recruiter chooses the right tool for the task</li>
+      <li>Agent feels like a collaborator, not a chatbot</li>
+      <li>Pipeline visibility without losing agent context</li>
+      <li>Power users can live in command bar; new users start in feed</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>Risks</h4>
+    <ul>
+      <li>More UI to build and maintain</li>
+      <li>Risk of "which view should I use?" confusion</li>
+      <li>Feed could feel redundant with pipeline notifications</li>
+      <li>State sync between views must be seamless</li>
+    </ul>
+  </div>
+</div>
+
+<p style="margin-top: 24px; font-size: 14px; color: #94a3b8;">Next, I'll show detailed mockups of each view. Does this hybrid concept feel right so far?</p>

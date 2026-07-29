@@ -5,6 +5,15 @@ from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+# pgvector Vector type — 1536 dimensions for OpenAI text-embedding-3-small
+try:
+    from pgvector.sqlalchemy import Vector
+    VECTOR_TYPE = Vector(1536)
+except ImportError:
+    # Fallback: use Float or Text when pgvector is not installed
+    from sqlalchemy import Float
+    VECTOR_TYPE = Float  # type: ignore[misc,assignment]
+
 from app.database import Base
 
 
@@ -27,6 +36,7 @@ class CandidateSkill(Base):
     skill_name: Mapped[str] = mapped_column(String(100), nullable=False)
     proficiency: Mapped[int | None] = mapped_column(Integer, nullable=True)
     years_experience: Mapped[float | None] = mapped_column(Float, nullable=True)
+    skill_embedding: Mapped[Any | None] = mapped_column(VECTOR_TYPE, nullable=True)
 
     candidate: Mapped["Candidate"] = relationship(back_populates="skills")
 

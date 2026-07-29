@@ -3,13 +3,14 @@
 **Date:** 2026-07-22
 **Status:** Approved
 **Scope:** Recruiter-facing client portal with self-learning AI agent
-**PRD Reference:** ats-ai.md (base ATS), notes.md (staffing co. scope)
+**PRD Reference:** agent-ats-ai.md (base ATS), notes.md (staffing co. scope)
+**UI/UX Reference:** docs/superpowers/specs/2026-07-26-agent-portal-ui-ux-design.md
 
 ---
 
 ## 1. System Overview
 
-The client portal is an **agent-first** experience where the recruiter interacts through natural language conversation. A central orchestrator agent coordinates specialist agents that handle sourcing, ranking, and outreach. The agent **learns** each recruiter's candidate matching preferences over time, becoming more accurate at surfacing relevant candidates.
+The client portal is an **agent-first** experience where the recruiter interacts through a **hybrid interface**: an Activity Feed for chronological awareness, a Pipeline/Kanban for visual stage management, and a persistent Command Panel for agent conversation. A central orchestrator agent coordinates specialist agents that handle sourcing, ranking, and outreach. The agent **learns** each recruiter's candidate matching preferences over time, becoming more accurate at surfacing relevant candidates.
 
 **Key principle:** The recruiter initiates or receives proactive suggestions from the agent. Every action (especially candidate submission) requires explicit human approval.
 
@@ -21,7 +22,7 @@ The client portal is an **agent-first** experience where the recruiter interacts
 
 | Component | Responsibility | Tech |
 |-----------|---------------|------|
-| **Chat UI** | Conversational interface with structured cards | Next.js + React + Tailwind |
+| **Agent Portal UI** | Hybrid interface: Activity Feed, Pipeline/Kanban, Jobs list, Preferences, Command Panel | Next.js + React + Tailwind + Warm Indigo theme |
 | **Agent Gateway** | FastAPI endpoint receiving messages, routing to orchestrator, streaming responses | FastAPI + new `/api/v1/agent/` routes |
 | **Orchestrator Agent** | Central coordinator. Parses intent, delegates to specialists, synthesizes responses | LangGraph StateGraph |
 | **Sourcing Agent** | Searches internal candidate DB, job boards, sub-vendors. Returns candidate lists | LangChain tool + pgvector |
@@ -36,11 +37,12 @@ The client portal is an **agent-first** experience where the recruiter interacts
 **Reactive (recruiter initiates):**
 ```
 Recruiter: "Find me strong candidates for the TCS Java lead role"
-  → Agent Gateway receives message
+  → Command Panel receives message
   → Orchestrator parses intent → delegates to SourcingAgent
   → SourcingAgent searches DB (vector + structured filters)
   → Results → RankingAgent applies learned preferences
-  → Orchestrator synthesizes → returns structured candidate cards to Chat UI
+  → Orchestrator synthesizes → returns structured candidate cards to Command Panel
+  → Feed item posted to Activity Feed
 ```
 
 **Proactive (agent initiates):**
@@ -49,7 +51,7 @@ Proactive Monitor detects new candidates matching open jobs
   → Monitor triggers Orchestrator with "sourcing pulse"
   → Orchestrator delegates to SourcingAgent + RankingAgent
   → Top matches → Orchestrator generates proactive alert
-  → Alert pushed to Chat UI via SSE: "I found 3 strong matches for your TCS Java role"
+  → Alert pushed to Command Panel via SSE + Feed item posted
 ```
 
 ---
@@ -61,7 +63,7 @@ Proactive Monitor detects new candidates matching open jobs
 Hierarchical multi-agent pattern. The Orchestrator wraps specialist agents as callable tools, enabling dynamic delegation based on user intent.
 
 **Orchestrator responsibilities:**
-- Receive messages from Chat UI via Agent Gateway
+- Receive messages from Command Panel via Agent Gateway
 - Parse intent using LLM function calling / tool selection
 - Delegate to specialists by calling their tools
 - Synthesize specialist outputs into coherent responses
@@ -86,7 +88,7 @@ Orchestrator receives: "Find me strong candidates for TCS Java role #123"
   → SourcingAgent returns: [Candidate A, Candidate B, Candidate C]
   → Orchestrator calls: RankingAgent.compute_fit_score(candidates=[...], job_id=123)
   → RankingAgent returns: [{candidate: A, score: 0.92, strengths: [...], gaps: [...]}]
-  → Orchestrator synthesizes → returns structured cards to Chat UI
+  → Orchestrator synthesizes → returns structured cards to Command Panel
 ```
 
 ---
@@ -161,7 +163,7 @@ POST /api/v1/agent/conversation
   → Load recruiter's preference profile (from Preference Engine)
   → Create Orchestrator instance with model_client, tools, memory, preferences
   → Run orchestrator.run(task=user_message)
-  → Stream response back to Chat UI
+  → Stream response back to Command Panel
   → Log action to agent_actions table (audit)
 ```
 
@@ -187,60 +189,282 @@ ARQ Cron Job (every 30 min)
     3. Query new candidates in DB (since last check)
     4. Run RankingAgent on new candidates
     5. If top match score > threshold → generate proactive alert
-    6. Push alert to Chat UI (SSE)
+    6. Push alert to Command Panel (SSE) + post Feed item
 ```
 
 ---
 
 ## 6. UI/UX Architecture
 
-### 6.1 Layout
+### 6.1 Interaction Paradigm: Hybrid
 
-Three-panel layout:
-- **Left sidebar:** New chat button + conversation history
-- **Center:** Chat panel with messages, structured cards, input field
-- **Right context panel:** Open jobs, top matches, recent activity (tabbed)
+The UI combines three interaction modes, accessible from any view:
 
-### 6.2 Components
+| Mode | Role | Access |
+|------|------|--------|
+| **Activity Feed** | Primary default view. Chronological timeline of agent suggestions, recruiter actions, system events. Agent participates as a collaborator. | Top-level tab |
+| **Pipeline / Kanban** | Job-scoped visual pipeline (Sourced → Reviewing → Submitted → Interviewing → Placed). For bottleneck spotting and stage management. | Top-level tab |
+| **Command Panel** | Persistent right-side panel. Full agent conversation always visible. Natural language and slash commands. Three states (see §6.3). | Always present, right panel |
 
-| Component | Responsibility | State |
-|-----------|---------------|-------|
-| `ChatWindow` | Message list, input, streaming responses | React state + SWR |
-| `MessageBubble` | Renders agent/user messages with structured cards | Props |
-| `CandidateCard` | Structured card: profile, fit score, actions | Fetches on expand |
-| `JobCard` | Job details, submission status, client info | SWR |
-| `ProactiveAlert` | Banner for agent-initiated alerts | SSE connection |
-| `PreferencePanel` | Show/edit explicit preferences, learning summary | API call |
-| `ContextPanel` | Right sidebar: jobs, matches, activity | Tabbed, context-aware |
+**Navigation:** Top-level tab bar (Feed | Pipeline | Jobs | Preferences | Analytics). No sidebars. Command panel persists across all tab switches.
 
-### 6.3 Message Types (Agent Response Schema)
+### 6.2 Layout
 
-```typescript
-type AgentMessage = {
-  id: string;
-  role: 'agent' | 'user';
-  content: string;           // Natural language response
-  cards: StructuredCard[];   // Candidate cards, job cards, action buttons
-  actions: AgentAction[];    // Approve, reject, submit, edit preferences
-  sources: SourceRef[];      // Data origin (DB, job board, etc.)
-  confidence?: number;       // Agent's confidence in response
-};
+#### 6.2.1 Page Structure
 
-type StructuredCard =
-  | CandidateCard    // Candidate profile with fit score
-  | JobCard          // Job requisition details
-  | AlertCard        // Proactive alert
-  | SummaryCard      // Agent-generated summary
-  | ActionCard;      // Interactive action buttons
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  Top Nav: ⚡ ATS Agent | Feed | Pipeline | Jobs | Prefs | Ana   │
+├──────────────────────────────────────────┬───────────────────────┤
+│                                          │                       │
+│   Main Content Area                      │  Command Panel        │
+│   (switches per tab)                     │  (persistent)         │
+│                                          │                       │
+│   Feed: activity timeline                │  Chat thread          │
+│   Pipeline: 5-col kanban                │  Action buttons       │
+│   Jobs: card list                        │  Inline cards         │
+│   Preferences: explicit + implicit       │  Quick action chips   │
+│   Analytics: charts (future)             │  /commands            │
+│                                          │                       │
+└──────────────────────────────────────────┴───────────────────────┘
 ```
 
-### 6.4 UX Principles
+#### 6.2.2 Responsive Behavior
 
-1. AI output is always visually distinguishable (badge, styling)
-2. Human approval gate on every submission
-3. Progressive disclosure (summaries in chat, expand for details)
-4. Preference transparency (recruiter sees what agent learned, can override)
-5. Proactive but not annoying (alerts batched, configurable, non-blocking)
+| Breakpoint | Behavior |
+|------------|----------|
+| ≥1280px | Full two-panel layout (main + command panel at 340px) |
+| 1024–1279px | Command panel collapses to icon; expands on click |
+| 768–1023px | Single column; command panel becomes bottom sheet |
+| <768px | Mobile-optimized; tabs become bottom nav; command panel is full-screen overlay |
+
+### 6.3 Command Panel States
+
+| State | Width | When | Features |
+|-------|-------|------|----------|
+| **Compact Chat** | 340px | Default | Conversation thread, input bar, quick action chips |
+| **Expanded Detail** | 440px | On candidate/job card click | Full profile: avatar, contact, fit breakdown, strengths/gaps, skills, CTA buttons. Breadcrumb "← Back to chat" |
+| **Side-by-Side Compare** | 440px (split) | On `/compare` command | Two 50% columns. Side-by-side fit scores, skills, gaps. Only for candidate comparison |
+
+### 6.4 Visual Theme: Warm Indigo
+
+**Color Palette:**
+- Surface base: `#faf9f7` (warm off-white), raised: `#f5f4f1`, hover: `#eeedea`, border: `#e2e0db`
+- Primary: `#4f46e5` (indigo 600), light: `#eef2ff` (indigo 50), hover: `#4338ca` (indigo 700)
+- Success: `#16a34a` (green 600), Warning: `#d97706` (amber 600), Error: `#dc2626` (red 600)
+- AI/Agent: `#9333ea` (purple 600)
+- Text: primary `#1c1917`, secondary `#57534e`, tertiary `#a8a29e`
+
+**Typography:** Font stack `Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif`
+- H1: 24px/700, H2: 18px/600, H3: 15px/600, Body: 14px/400, Body small: 13px/400, Caption: 11px/500
+
+**Spacing:** 4px base scale (4, 8, 12, 16, 24, 32, 48, 64)
+**Border Radius:** Cards/panels 8px, Buttons/inputs 6px, Badges/chips 4px, Avatars 50%, Pill tags 9999px
+
+### 6.5 AI Output Distinction (EU AI Act)
+
+All AI-generated content must be visually distinguishable:
+
+| Badge | Color | When |
+|-------|-------|------|
+| `AI-GENERATED` | Indigo 50 bg, Indigo 600 text | Standard AI output |
+| `LOW CONFIDENCE` | Amber 50 bg, Amber 600 text | Confidence <70% |
+| `AGENT SUGGESTION` | Purple 50 bg, Purple 600 text | Proactive (unsolicited) output |
+| `PREFERENCE UPDATED` | Purple 50 bg, Purple 600 text | Preference learning events |
+| `LEARNING` | Purple 50 bg, Purple 600 text | Weekly digest, learning summaries |
+
+Every AI output shows a confidence percentage (0–100%). Low-confidence assertions (<70%) require manual confirmation before actions.
+
+### 6.6 View Specifications
+
+#### 6.6.1 Activity Feed
+
+- Chronological, reverse-chronological (newest first)
+- Grouped by date: "Today", "Yesterday", date headers
+- Feed item types: agent match, user message, submission event, learning digest, system alert
+- Each item: left border color indicates type (indigo=AI, green=user action, purple=learning, red=alert)
+- Inline actions on agent items: Approve, Review, Reject buttons
+- Clicking a candidate name opens Command Panel in Expanded Detail state
+- Clicking a job link navigates to Pipeline view scoped to that job
+
+#### 6.6.2 Pipeline / Kanban
+
+- 5 columns: Sourced → Reviewing → Submitted → Interviewing → Placed
+- Column header: name + count badge
+- Column widths: flex, with minimum 160px per column
+- Job context bar at top with job title, req ID, "new since yesterday" counter
+- Candidate cards within columns: name, title, experience, fit score + stars, skill tags
+- Agent integration: "+3 new matches" card in Sourced column; gap indicators on candidate cards
+- Actions: Approve/Reject inline on Reviewing cards; "→ Review" link on Sourced cards
+
+#### 6.6.3 Jobs List
+
+- Card-based list of all open jobs
+- Each card shows: client + role, req ID, location, candidate count, pipeline summary (e.g., "8R · 3S · 1I")
+- Color-coded left border: blue=healthy, yellow=needs attention, green=on track, red=critical
+- Agent insights: per-card status line ("Strong pipeline", "Pipeline too thin", "No candidates yet")
+- Click opens Pipeline view scoped to that job
+
+#### 6.6.4 Preferences & Learning
+
+**Explicit Preferences** (hard rules): list of active rules with toggle, "Add Rule" button
+**Implicit / Learned Preferences**: learned patterns with name, confidence level (High/Medium/Low), evidence count, visual strength bar (0–100%)
+**Weekly Learning Summary**: banner with stats, trends, Accept/Revert/Dismiss actions
+
+#### 6.6.5 Command Panel (Detail State)
+
+Content: avatar + name + contact info + location + work authorization; current role vs. target role; fit score breakdown (Skills Match, Experience, Preference Alignment); strengths (green) and gaps (red); skills as colored pill tags; action buttons (Approve & Submit, View Resume, Draft Outreach, Reject, Compare, Save for later); source attribution.
+
+### 6.7 Component Tree
+
+```
+App
+├── TopNav
+│   ├── Logo ("⚡ ATS Agent")
+│   ├── TabBar (Feed | Pipeline | Jobs | Preferences | Analytics)
+│   └── NotificationBadge
+│
+├── MainContent (switches by active tab)
+│   ├── FeedView
+│   │   ├── DateGroup
+│   │   │   └── FeedItem (agent | user | system | alert)
+│   │   │       ├── Badge (AI-GENERATED | YOU | SUBMITTED | LEARNING | ALERT)
+│   │   │       ├── Content
+│   │   │       ├── InlineCard (CandidateCard | JobCard | AlertCard)
+│   │   │       └── ActionButtons (Approve | Review | Reject)
+│   │   └── LoadingSkeleton / EmptyState / ErrorState
+│   │
+│   ├── PipelineView
+│   │   ├── JobContextBar
+│   │   ├── PipelineColumn × 5
+│   │   │   ├── ColumnHeader (name + count)
+│   │   │   └── PipelineCard
+│   │   │       ├── CandidateName
+│   │   │       ├── RoleTitle
+│   │   │       ├── FitBadge (score + stars)
+│   │   │       ├── SkillTags
+│   │   │       └── StageActions (→Review | Approve | Reject)
+│   │   └── LoadingSkeleton / EmptyState / ErrorState
+│   │
+│   ├── JobsView
+│   │   ├── JobCard
+│   │   │   ├── JobHeader (client + role + req ID)
+│   │   │   ├── PipelineSummary
+│   │   │   ├── AgentInsight
+│   │   │   └── StatusBorder (color-coded)
+│   │   └── LoadingSkeleton / EmptyState / ErrorState
+│   │
+│   ├── PreferencesView
+│   │   ├── ExplicitPreferences (rule list)
+│   │   ├── ImplicitPreferences (learned list)
+│   │   ├── LearningDigest
+│   │   └── LoadingSkeleton / EmptyState / ErrorState
+│   │
+│   └── AnalyticsView (placeholder for Phase 3)
+│
+└── CommandPanel (persistent)
+    ├── CompactChat (default, 340px)
+    │   ├── MessageThread
+    │   │   └── CommandMessage (user | agent)
+    │   │       ├── RoleBadge
+    │   │       ├── Content (text + optional cards)
+    │   │       └── InlineActions
+    │   ├── InputBar
+    │   │   ├── TextInput
+    │   │   ├── AttachButton
+    │   │   ├── VoiceButton
+    │   │   └── SendButton
+    │   └── QuickActionChips (/find, /submit, /schedule, /prefs, /outreach)
+    │
+    ├── ExpandedDetail (440px)
+    │   ├── BackButton ("← Back to chat")
+    │   ├── CandidateProfile
+    │   ├── FitScoreBreakdown
+    │   ├── StrengthsGaps
+    │   ├── SkillsTags
+    │   ├── CTAActions
+    │   └── SourceAttribution
+    │
+    └── SideBySideCompare (440px split)
+        ├── CompareColumn × 2
+        └── ComparisonActions
+```
+
+### 6.8 Message Types (Agent Response Schema)
+
+```typescript
+type FeedItemType = 'agent' | 'user' | 'system' | 'alert';
+
+interface FeedItem {
+  id: string;
+  type: FeedItemType;
+  content: string;
+  badge?: string;                    // AI-GENERATED, LOW CONFIDENCE, etc.
+  cards?: StructuredCard[];
+  actions?: AgentAction[];
+  created_at: string;
+}
+
+interface AgentMessage {
+  id: string;
+  role: 'agent' | 'user' | 'system';
+  content: string;
+  cards: StructuredCard[];
+  actions: AgentAction[];
+  sources: SourceRef[];
+  confidence?: number;
+  is_proactive?: boolean;
+  created_at: string;
+}
+
+type StructuredCard =
+  | { type: 'candidate'; data: CandidateProfile; fitScore: number; strengths: string[]; gaps: string[] }
+  | { type: 'job'; data: JobRequisition }
+  | { type: 'alert'; data: ProactiveAlertData }
+  | { type: 'summary'; data: AgentSummaryData }
+  | { type: 'preference'; data: PreferenceUpdateData };
+
+interface AgentAction {
+  id: string;
+  label: string;
+  type: 'approve' | 'reject' | 'submit' | 'edit_preference' | 'schedule_interview' | 'draft_outreach';
+  payload: Record<string, unknown>;
+  confirmation?: string;
+}
+
+interface SourceRef {
+  type: 'internal_db' | 'job_board' | 'sub_vendor' | 'client_portal';
+  identifier: string;
+  timestamp: string;
+}
+
+const PIPELINE_STAGES = ['sourced', 'reviewing', 'submitted', 'interviewing', 'placed'] as const;
+type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+interface Job {
+  id: string;
+  req_id: string;
+  client_name: string;
+  role_title: string;
+  location: string;
+  status: 'healthy' | 'needs_attention' | 'on_track' | 'critical';
+  domains: string[];
+  candidate_count: number;
+  pipeline_summary: string;
+  agent_insight: string;
+}
+```
+
+### 6.9 UX Principles
+
+1. **AI output is always distinguishable** — "AI-generated" badge, distinct styling, confidence score visible
+2. **Human approval gate** — Every submission, rejection, and outreach send requires explicit recruiter action
+3. **Progressive disclosure** — Feed shows summaries; click to expand full candidate profile in Command Panel
+4. **Preference transparency** — Recruiter can see, edit, and override all learned preferences in dedicated tab
+5. **Proactive but not annoying** — Alerts are batched (max 3/hour), configurable, dismissible
+6. **Error recovery** — If agent is uncertain, it asks clarifying questions instead of guessing; graceful degradation to manual search
+7. **Hybrid interaction** — Activity Feed as primary view, Pipeline for visual management, Command Panel for agent conversation — recruiter chooses the mode per task
+8. **Consistent visual system** — Warm Indigo theme, 4px spacing scale, Inter typography, uniform border radius
 
 ---
 
@@ -249,14 +473,15 @@ type StructuredCard =
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
 | Backend Framework | FastAPI (existing) | Already in use, async support, OpenAPI |
-| Agent Framework | LangGraph (StateGraph) | Stateful agent loops, persistent memory, tool calling, MCP support, TypeScript available |
-| LLM Provider | OpenAI GPT-4o (via AI Middleware Gateway) | Existing ats-ai.md architecture with PII redaction |
+| Agent Framework | LangGraph (StateGraph) | Stateful agent loops, persistent memory, tool calling, TypeScript available |
+| LLM Provider | OpenAI GPT-4o (via AI Middleware Gateway) | Existing architecture with PII redaction |
 | Vector Search | pgvector (PostgreSQL extension) | Co-located with existing DB, hybrid search (vector + structured) |
 | Memory Store | LangChain InMemoryStore (session) + PostgreSQL (long-term) | Ephemeral session, persistent long-term for GDPR |
 | Real-time Updates | Server-Sent Events (SSE) | Simpler than WebSocket for server→client push |
 | Task Queue | ARQ (Async Redis Queue) | Lightweight, works with existing Redis, async-native |
-| Frontend | Next.js + React + Tailwind | No frontend exists; rapid development |
-| State Management | React Query (SWR) + React state | Data fetching + local UI state |
+| Frontend | Next.js + React + Tailwind + Warm Indigo theme | Hybrid interaction paradigm with Feed, Pipeline, Command Panel |
+| State Management | React Query (SWR) + React state + Zustand | Server-state caching + local UI state + global panel state |
+| UI Components | Headless UI + custom components | Accessible, themeable, WCAG 2.1 AA compliant |
 
 ---
 
@@ -323,11 +548,11 @@ CREATE TABLE agent_proactive_alerts (
 
 | Phase | Deliverables | Effort |
 |-------|-------------|--------|
-| **Phase 1: Agent Foundation** | Agent Gateway API, Orchestrator agent, basic chat endpoint, preference store (JSONB) | 2-3 weeks |
-| **Phase 2: Sourcing + Ranking** | SourcingAgent, RankingAgent, pgvector integration, candidate search tools, fit scoring | 3-4 weeks |
-| **Phase 3: Preference Learning** | Implicit preference learning loop, preference engine, learning summary UI | 2-3 weeks |
+| **Phase 1: Agent Foundation** | Agent Gateway API, Orchestrator agent, basic chat endpoint, preference store (JSONB), CommandPanel (Compact Chat) | 2-3 weeks |
+| **Phase 2: Sourcing + Ranking** | SourcingAgent, RankingAgent, pgvector integration, candidate search tools, fit scoring, FeedView, PipelineView | 3-4 weeks |
+| **Phase 3: Preference Learning** | Implicit preference learning loop, preference engine, PreferencesView, LearningDigest | 2-3 weeks |
 | **Phase 4: Outreach Agent** | OutreachAgent, email drafting, template engine, recruiter approval flow | 2 weeks |
-| **Phase 5: Chat UI** | Next.js frontend, chat window, candidate cards, proactive alerts (SSE), preference panel | 3-4 weeks |
+| **Phase 5: Agent Portal UI** | Full hybrid UI: TopNav, TabBar, FeedView, PipelineView, JobsView, CommandPanel (all 3 states), AI badges, error/empty states | 3-4 weeks |
 | **Phase 6: Proactive Monitor** | ARQ cron jobs, sourcing pulse, alert push, notification preferences | 1-2 weeks |
 | **Phase 7: Compliance + Polish** | EU AI Act audit trail, GDPR erasure, bias monitoring, UX polish | 2 weeks |
 
@@ -340,8 +565,10 @@ CREATE TABLE agent_proactive_alerts (
 | Agent pattern | Orchestrator + 3 specialist agents (Sourcing, Ranking, Outreach) |
 | Agent framework | LangGraph (StateGraph) |
 | Memory | Two-tier: explicit JSONB + implicit pgvector embeddings |
-| UI paradigm | Chat-first with structured cards and context panel |
+| UI paradigm | Hybrid: Activity Feed + Pipeline/Kanban + Command Panel (3 states) |
+| Navigation | Top-level tabs (Feed, Pipeline, Jobs, Preferences, Analytics); no sidebars |
+| Visual theme | Warm Indigo: #4f46e5 primary, #faf9f7 surface, Inter typography |
 | Real-time | SSE for proactive alerts |
-| MVP scope | Sourcing + Ranking + Preference Learning + Chat UI |
+| MVP scope | Sourcing + Ranking + Preference Learning + Hybrid UI |
 | Compliance | EU AI Act audit trail via `agent_actions` table |
 | LLM routing | Through existing Unified AI Middleware Gateway (PII redaction) |

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import require_role
+from app.auth.dependencies import get_current_user, require_role
 from app.auth.jwt import create_access_token
 from app.auth.password import hash_password
 from app.database import get_session
@@ -24,6 +24,21 @@ from app.schemas.user import (
 )
 
 users_router = APIRouter(prefix="/users", tags=["users"])
+
+
+@users_router.get("/me", response_model=UserResponse)
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+):
+    """Get the current authenticated user's profile."""
+    return UserResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at.isoformat(),
+        updated_at=current_user.updated_at.isoformat(),
+    )
 
 
 @users_router.get("", response_model=None)

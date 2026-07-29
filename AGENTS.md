@@ -44,3 +44,17 @@
 - Session `get_session` commits on success, rolls back on exception — don't commit manually inside route handlers.
 - Rate limiter uses Redis — skipped in tests via the `mock_redis` fixture.
 - RLS policies and bootstrap are manual scripts, not part of migration. Run after `alembic upgrade head`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as GitHub issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: `CONTEXT.md` at repo root + `docs/adr/` for ADRs. See `docs/agents/domain.md`.

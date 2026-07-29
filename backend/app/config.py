@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     jwt_expiration_minutes: int = 1440
     jwt_refresh_expiration_days: int = 30
 
+    openai_api_key: str = ""
+    openai_base_url: str = ""
+    openai_model: str = "gpt-4o"
+
     s3_bucket: str = "ats-ai-uploads"
     s3_region: str = "us-east-1"
     s3_access_key: str = ""

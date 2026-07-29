@@ -4,9 +4,11 @@ from datetime import UTC, datetime
 
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.middleware.error_handler import AppException
 from app.models.candidate import Candidate, CandidateSource
+from app.models.candidate_document import CandidateDocument
 from app.models.candidate_skill import CandidateSkill
 from app.models.candidate_timeline import CandidateTimeline
 
@@ -87,8 +89,16 @@ async def list_candidates(
     from uuid import UUID
 
     org_uuid = UUID(organization_id)
-    base_query = select(Candidate).where(Candidate.organization_id == org_uuid)
-    count_query = select(func.count()).where(Candidate.organization_id == org_uuid)
+    base_query = (
+        select(Candidate)
+        .where(Candidate.organization_id == org_uuid)
+        .options(
+            selectinload(Candidate.skills),
+            selectinload(Candidate.documents),
+            selectinload(Candidate.timeline),
+        )
+    )
+    count_query = select(func.count(Candidate.id)).where(Candidate.organization_id == org_uuid)
 
     filters = []
     if status:
@@ -98,13 +108,12 @@ async def list_candidates(
     if owner_id:
         filters.append(Candidate.owner_id == UUID(owner_id))
     if search:
-        # Full-text search on name and title
+        # Full-text search on name and title using GIN index
+        from sqlalchemy import text
         search_term = f"%{search}%"
         filters.append(
             or_(
-                Candidate.first_name.ilike(search_term),
-                Candidate.last_name.ilike(search_term),
-                Candidate.current_title.ilike(search_term),
+                text("to_tsvector('english', coalesce(candidates.first_name, '') || ' ' || coalesce(candidates.last_name, '') || ' ' || coalesce(candidates.current_title, '')) @@ plainto_tsquery('english', :search)").bindparams(search=search),
                 Candidate.email.ilike(search_term),
             )
         )

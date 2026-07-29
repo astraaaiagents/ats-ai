@@ -40,6 +40,21 @@ class User(Base):
     candidates: Mapped[list["Candidate"]] = relationship(
         back_populates="owner", foreign_keys="[Candidate.owner_id]"
     )
+    recruiter_preferences: Mapped[list["RecruiterPreference"]] = relationship(
+        back_populates="recruiter", cascade="all, delete-orphan"
+    )
+    conversation_sessions: Mapped[list["AgentConversationSession"]] = relationship(
+        back_populates="recruiter", cascade="all, delete-orphan"
+    )
+    agent_actions: Mapped[list["AgentAction"]] = relationship(
+        back_populates="recruiter", cascade="all, delete-orphan"
+    )
+    proactive_alerts: Mapped[list["AgentProactiveAlert"]] = relationship(
+        back_populates="recruiter", cascade="all, delete-orphan"
+    )
+    learning_events: Mapped[list["PreferenceLearningEvent"]] = relationship(
+        back_populates="recruiter", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index(

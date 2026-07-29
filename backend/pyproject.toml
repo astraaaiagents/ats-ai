@@ -16,6 +16,10 @@ dependencies = [
     "redis[hiredis]>=5.2.0",
     "httpx>=0.28.0",
     "python-dotenv>=1.0.0",
+    "apscheduler>=3.10.0",
+    "openai>=1.55.0",
+    "langchain-openai>=0.2.0",
+    "langgraph>=0.2.0",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +27,7 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "pytest-httpx>=0.35.0",
+    "pytest-mock>=3.14.0",
 ]
 
 [project.scripts]

@@ -9,6 +9,7 @@ from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import close_redis_client
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.tenant import TenantMiddleware
+from app.routes.agent import agent_router
 from app.routes.auth import auth_router
 from app.routes.candidates import candidates_router
 from app.routes.client_contacts import client_contacts_router
@@ -18,7 +19,15 @@ from app.routes.users import users_router
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Start the proactive monitor (sourcing pulse scheduler)
+    from app.services.proactive_monitor import start_monitor
+    start_monitor()
+
     yield
+
+    # Stop the proactive monitor on shutdown
+    from app.services.proactive_monitor import stop_monitor
+    stop_monitor()
     await close_redis_client()
 
 
@@ -34,6 +43,7 @@ api_router.include_router(candidates_router)
 api_router.include_router(organizations_router)
 api_router.include_router(users_router)
 api_router.include_router(client_contacts_router)
+api_router.include_router(agent_router)
 
 
 def create_app() -> FastAPI:

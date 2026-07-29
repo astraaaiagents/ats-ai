@@ -9,7 +9,15 @@ from app.models.organization import Organization
 from app.models.platform_user import PlatformUser
 from app.models.user import User
 
+# Agent portal models
+from app.models.recruiter_preference import RecruiterPreference
+from app.models.agent_conversation import AgentConversationSession, AgentConversationMessage
+from app.models.agent_action import AgentAction
+from app.models.agent_alert import AgentProactiveAlert
+from app.models.preference_learning_event import PreferenceLearningEvent
+
 __all__ = [
+    # Existing models
     "AuditLog",
     "Candidate",
     "CandidateDocument",
@@ -20,4 +28,11 @@ __all__ = [
     "PlatformUser",
     "TokenBlacklist",
     "User",
+    # Agent portal models
+    "RecruiterPreference",
+    "AgentConversationSession",
+    "AgentConversationMessage",
+    "AgentAction",
+    "AgentProactiveAlert",
+    "PreferenceLearningEvent",
 ]

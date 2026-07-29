@@ -62,7 +62,7 @@ This system is a **superset** of the base ATS (ats-ai.md). It adds an agent-firs
 
 | Persona | Role & Needs | System Interaction |
 | :--- | :--- | :--- |
-| **Recruiter** | Primary user. Sources, ranks, submits candidates. Needs AI assistance to eliminate manual search and scale outreach. | **Daily driver.** Interacts with the AI agent via chat. Reviews candidate cards, approves/rejects, drafts outreach, schedules interviews. |
+| **Recruiter** | Primary user. Sources, ranks, submits candidates. Needs AI assistance to eliminate manual search and scale outreach. | **Daily driver.** Interacts with the AI agent via the Command Panel. Reviews candidate cards in Feed/Pipeline, approves/rejects, drafts outreach, schedules interviews. |
 | **Account Manager (AM)** | Manages client relationships, assigns jobs to recruiters. Needs visibility into recruiter workload and submission quality. | Assigns job requests to recruiters (may be AI-assisted in future). Monitors recruiter KPIs. Hybrid role: can also act as recruiter. |
 | **Hiring Manager (HM)** | Client-side contact (at TCS/Infy/Wipro). Submits job requirements, reviews submitted candidates. | Uses the **Client Portal** (separate from agent portal). Submits job reqs via portal or email. Reviews candidate submissions. |
 | **Candidate** | Job seeker applying through client websites. Needs easy application flow and transparency. | Uses the **Candidate Portal** (embedded in client websites). Uploads resume, searches jobs, tracks applications. |
@@ -86,88 +86,83 @@ All AI features operate through a centralized gateway, extended for the agent po
 ### 4.2 Agent Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Chat UI (Next.js)                        │
-│  ┌──────────┬────────────────────────┬──────────────────────┐  │
-│  │ Sidebar  │    Chat Panel          │   Context Panel      │  │
-│  │          │  ┌──────────────────┐  │  Open Jobs           │  │
-│  │ Convers. │  │ Agent: I found   │  │  └─ Java Lead        │  │
-│  │ History  │  │ 3 strong matches │  │  └─ Python Dev       │  │
-│  │          │  │ for TCS Java     │  │                      │  │
-│  │          │  │ [Approve][Review]│  │  Top Matches         │  │
-│  │          │  └──────────────────┘  │  ────────────        │  │
-│  │          │  ┌──────────────────┐  │  1. Jane Doe ★★★★★  │  │
-│  │          │  │ Candidate Card   │  │  2. John Smith ★★★★ │  │
-│  │          │  │ [View][Submit]   │  │                      │  │
-│  │          │  └──────────────────┘  │  Recent Activity     │  │
-│  │          │  [Type...] 📎         │                      │  │
-│  └──────────┴────────────────────────┴──────────────────────┘  │
-└────────────────────────┬────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     Agent Portal UI (Next.js)                           │
+│  ┌──────────────────────────────────────────────┬──────────────────────┐│
+│  │  Main Content Area (Feed | Pipeline | Jobs)  │  Command Panel       ││
+│  │                                              │  (persistent)        ││
+│  │  Feed: activity timeline                     │  Chat thread         ││
+│  │  Pipeline: 5-col kanban                      │  Action buttons      ││
+│  │  Jobs: card list                             │  Inline cards        ││
+│  │  Preferences: explicit + implicit            │  Quick action chips  ││
+│  │  Analytics: charts (future)                  │  /commands           ││
+│  └──────────────────────────────────────────────┴──────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────┘
                          │ SSE / WebSocket (proactive alerts)
                          │ POST / GET (conversations)
                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Agent Gateway (FastAPI)                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Auth Middleware → Tenant Isolation → Rate Limiting      │  │
-│  │  /api/v1/agent/conversation (POST/GET)                   │  │
-│  │  /api/v1/agent/preferences (GET/PUT)                     │  │
-│  │  /api/v1/agent/proactive/alerts (GET)                    │  │
-│  │  /api/v1/agent/action-log (GET)                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└────────────────────────┬────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Agent Gateway (FastAPI)                              │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  Auth Middleware → Tenant Isolation → Rate Limiting              │  │
+│  │  /api/v1/agent/conversation (POST/GET)                           │  │
+│  │  /api/v1/agent/preferences (GET/PUT)                             │  │
+│  │  /api/v1/agent/proactive/alerts (GET)                            │  │
+│  │  /api/v1/agent/action-log (GET)                                  │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└────────────────────────┬────────────────────────────────────────────────┘
                          │
                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   Agent Orchestration Layer                     │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              Orchestrator Agent (LangGraph)              │   │
-│  │  • Parses user intent                                    │   │
-│  │  • Delegates to specialists                              │   │
-│  │  • Synthesizes responses                                 │   │
-│  │  • Manages conversation state                            │   │
-│  │  • Triggers proactive checks                             │   │
-│  └────┬──────────┬──────────┬──────────────────┬───────────┘   │
-│       │          │          │                  │                │
-│       ▼          ▼          ▼                  ▼                │
-│  ┌────────┐ ┌────────┐ ┌────────┐ ┌──────────────────┐        │
-│  │Sourcing│ │Ranking │ │Outreach│ │Preference Engine │        │
-│  │Agent   │ │Agent   │ │Agent   │ │(JSONB + pgvector)│        │
-│  │        │ │        │ │        │ │                  │        │
-│  │search_ │ │compute_│ │draft_  │ │Explicit prefs    │        │
-│  │candidates│fit_   │ │outreach│ │Implicit vectors  │        │
-│  │_db()   │ │score() │ │()      │ │Learning loop     │        │
-│  │        │ │        │ │        │ │Update triggers   │        │
-│  │search_ │ │gap_    │ │get_    │ │                  │        │
-│  │job_    │ │identify│ │contact │ │Memory Store      │        │
-│  │boards()│ │()      │ │()      │ │(InMemoryStore)   │        │
-│  │        │ │        │ │        │ │                  │        │
-│  │search_ │ │compare │ │gen_    │ │Session Memory    │        │
-│  │sub_    │ │_cand() │ │email() │ │Conversation Log  │        │
-│  │vendors()│ │        │ │        │ │Action Audit Log │        │
-│  └──┬─────┘ └──┬─────┘ └──┬─────┘ └──────────────────┘        │
-│     │           │            │                                 │
-│     ▼           ▼            ▼                                 │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │              Data & Integration Layer                    │  │
-│  │  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ │  │
-│  │  │PostgreSQL│ │pgvector  │ │Redis     │ │LLM Gateway │ │  │
-│  │  │(Candidates│ │(Embed-  │ │(Rate     │ │(PII Redact │ │  │
-│  │  │, Users,  │ │dings)    │ │Limit,    │ │, ZDR)      │  │
-│  │  │Jobs,     │ │          │ │ARQ Queue)│ │             │  │
-│  │  │Prefs)    │ │          │ │          │ │             │  │
-│  │  └─────────┘ └──────────┘ └──────────┘ └────────────┘ │  │
-│  └─────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   Agent Orchestration Layer                             │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │              Orchestrator Agent (LangGraph)                      │   │
+│  │  • Parses user intent                                            │   │
+│  │  • Delegates to specialists                                      │   │
+│  │  • Synthesizes responses                                         │   │
+│  │  • Manages conversation state                                    │   │
+│  │  • Triggers proactive checks                                     │   │
+│  └────┬──────────┬──────────┬──────────────────┬───────────────────┘   │
+│       │          │          │                  │                        │
+│       ▼          ▼          ▼                  ▼                        │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────────────────────┐           │
+│  │Sourcing│ │Ranking │ │Outreach│ │Preference Engine       │           │
+│  │Agent   │ │Agent   │ │Agent   │ │(JSONB + pgvector)      │           │
+│  │        │ │        │ │        │ │                        │           │
+│  │search_ │ │compute_│ │draft_  │ │Explicit prefs          │           │
+│  │candidates│fit_   │ │outreach│ │Implicit vectors         │           │
+│  │_db()   │ │score() │ │()      │ │Learning loop            │           │
+│  │        │ │        │ │        │ │Update triggers          │           │
+│  │search_ │ │gap_    │ │get_    │ │                        │           │
+│  │job_    │ │identify│ │contact │ │Memory Store             │           │
+│  │boards()│ │()      │ │()      │ │(InMemoryStore)          │           │
+│  │        │ │        │ │        │ │                        │           │
+│  │search_ │ │compare │ │gen_    │ │Session Memory           │           │
+│  │sub_    │ │_cand() │ │email() │ │Conversation Log         │           │
+│  │vendors()│ │        │ │        │ │Action Audit Log        │           │
+│  └──┬─────┘ └──┬─────┘ └──┬─────┘ └────────────────────────┘           │
+│     │           │            │                                         │
+│     ▼           ▼            ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐  │
+│  │              Data & Integration Layer                           │  │
+│  │  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │  │
+│  │  │PostgreSQL│ │pgvector  │ │Redis     │ │LLM Gateway       │   │  │
+│  │  │(Candidates│ │(Embed-  │ │(Rate     │ │(PII Redact, ZDR) │   │  │
+│  │  │, Users,  │ │dings)    │ │Limit,    │ │                  │   │  │
+│  │  │Jobs,     │ │          │ │ARQ Queue)│ │                  │   │  │
+│  │  │Prefs)    │ │          │ │          │ │                  │   │  │
+│  │  └─────────┘ └──────────┘ └──────────┘ └──────────────────┘   │  │
+│  └─────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
                          │
                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    External Services                            │
-│  Job Boards (RSS/API) │ Google Calendar │ Email (SendGrid)      │
-│  ──────────────────── │ ─────────────── │ ────────────────────  │
-│  Monitor inbound apps │ Schedule interviews │ Send outreach     │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    External Services                                    │
+│  Job Boards (RSS/API) │ Google Calendar │ Email (SendGrid)              │
+│  ──────────────────── │ ─────────────── │ ────────────────────────────  │
+│  Monitor inbound apps │ Schedule interviews │ Send outreach             │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 4.3 Data Flow: Reactive (Recruiter Initiates)
@@ -185,7 +180,7 @@ Step 9: Orchestrator calls RankingAgent.compute_fit_score(candidates=[...], job_
 Step 10: RankingAgent applies recruiter's learned preferences → computes fit scores
 Step 11: RankingAgent returns ranked list with fit scores, strengths, gaps
 Step 12: Orchestrator synthesizes → generates natural language response + structured candidate cards
-Step 13: Response streamed to Chat UI via SSE
+Step 13: Response streamed to Command Panel via SSE
 Step 14: Action logged to agent_actions table (EU AI Act audit)
 ```
 
@@ -201,9 +196,9 @@ Step 2: For each active recruiter:
 Step 3: If top match score > configured threshold (default: 0.85):
   a. Orchestrator generates proactive alert message
   b. Alert stored in agent_proactive_alerts table
-  c. Alert pushed to recruiter's Chat UI via SSE
-Step 4: Recruiter sees alert banner: "I found 3 strong matches for your TCS Java role"
-Step 5: Recruiter clicks alert → conversation opens with candidate cards
+  c. Alert pushed to recruiter's Command Panel via SSE
+Step 4: Recruiter sees alert in Command Panel: "I found 3 strong matches for your TCS Java role"
+Step 5: Recruiter clicks alert → candidate detail opens in Command Panel Expanded state
 ```
 
 ---
@@ -279,18 +274,22 @@ Step 5: Recruiter clicks alert → conversation opens with candidate cards
 | Preference transparency | UI to show recruiter what the agent learned | P1 |
 | Weekly learning digest | Agent summarizes weekly learning to recruiter | P2 |
 
-#### 5.1.7 Chat UI
+#### 5.1.7 Agent Portal UI (Hybrid Interaction)
 
 | Feature | Description | Priority |
 |---------|-------------|----------|
-| Chat window | Message list with streaming responses | P0 |
+| Activity Feed | Chronological timeline of agent suggestions, recruiter actions, system events | P0 |
+| Pipeline / Kanban | 5-col visual pipeline (Sourced → Reviewing → Submitted → Interviewing → Placed) | P0 |
+| Jobs list | Card-based list of open jobs with pipeline summary | P0 |
+| Command Panel | Persistent right-side panel with chat, natural language, slash commands | P0 |
+| Command Panel states | Compact Chat (340px), Expanded Detail (440px), Side-by-Side Compare | P0 |
 | Candidate cards | Structured card: name, title, fit score, strengths, actions | P0 |
-| Job cards | Job requisition details, submission status | P0 |
-| Proactive alerts | Banner/notification for agent-initiated alerts | P0 |
-| Preference panel | Show/edit explicit preferences, view learning summary | P1 |
-| Context panel | Right sidebar: open jobs, top matches, recent activity | P1 |
-| AI output distinction | Visual badge/styling on all AI-generated content | P0 |
-| Action buttons | Approve, reject, submit, edit preferences on cards | P0 |
+| Job cards | Job requisition details, submission status, agent insight | P0 |
+| Proactive alerts | Agent-initiated alerts in Command Panel + Feed | P0 |
+| Preferences view | Explicit + implicit preferences, weekly learning digest | P1 |
+| AI output distinction | Visual badge/styling on all AI-generated content (EU AI Act) | P0 |
+| Action buttons | Approve, reject, submit, edit preferences, compare on cards | P0 |
+| Quick Review mode | Batch candidate review with keyboard-driven approve/reject/flag | P1 |
 
 ### 5.2 Out of Scope for MVP
 
@@ -314,7 +313,7 @@ Step 5: Recruiter clicks alert → conversation opens with candidate cards
 **Story 1.1: Natural Language Candidate Search**
 > As a recruiter, I want to type "Find me Java candidates for the TCS role" in natural language, so that I don't have to navigate filters and forms.
 - **Given** I have open job requisition #123 for TCS Java Lead
-- **When** I type "Find me strong Java candidates for the TCS role"
+- **When** I type "Find me strong Java candidates for the TCS role" in the Command Panel
 - **Then** the agent searches the internal database using structured filters + vector skill search
 - **And** returns ranked candidate cards with fit scores, strengths, and gaps
 - **And** each card has [View], [Submit], [Reject] action buttons
@@ -330,8 +329,8 @@ Step 5: Recruiter clicks alert → conversation opens with candidate cards
 **Story 1.3: Quick Review Mode**
 > As a recruiter, I want to quickly review a batch of candidates and approve/reject them in bulk, so that I can process hundreds of profiles efficiently.
 - **Given** the agent has returned 50 candidates for a job
-- **When** I review them in a streamlined card-by-card view
-- **Then** I can approve, reject (with optional reason), or flag for later
+- **When** I launch Quick Review mode
+- **Then** I can approve, reject (with optional reason), or flag for later card-by-card
 - **And** each approval/rejection updates the agent's implicit preferences
 - **And** after the batch, the agent summarizes: "You preferred candidates with AWS and leadership experience this round"
 
@@ -340,9 +339,9 @@ Step 5: Recruiter clicks alert → conversation opens with candidate cards
 - **Given** I have open job requisitions
 - **When** new candidates enter the database (via application, upload, or sub-vendor)
 - **Then** the agent evaluates them against my open jobs every 30 minutes
-- **And** if a candidate scores above 0.85 fit, I receive a proactive alert
+- **And** if a candidate scores above 0.85 fit, I receive a proactive alert in the Command Panel and Feed
 - **And** the alert shows the candidate's top match reasons
-- **And** I can click the alert to open the candidate in the chat
+- **And** I can click the alert to open the candidate in Expanded Detail state
 
 ### 6.2 Recruiter — Outreach
 
@@ -369,12 +368,12 @@ Step 5: Recruiter clicks alert → conversation opens with candidate cards
 - **When** I say "Remember, I only submit candidates with US work authorization"
 - **Then** the agent adds this as an explicit preference
 - **And** future searches automatically filter out candidates without US work authorization
-- **And** I can see and edit my explicit preferences in the Preference Panel
+- **And** I can see and edit my explicit preferences in the Preferences tab
 
 **Story 3.2: View Learning Summary**
 > As a recruiter, I want to see what the agent has learned about my preferences, so that I can verify it's ranking correctly.
 - **Given** I've reviewed candidates over several weeks
-- **When** I open the Preference Panel
+- **When** I open the Preferences tab
 - **Then** I see my explicit rules and implicit preference scores
 - **And** I see a weekly digest: "This week you preferred candidates with cloud experience, 5+ years in Java, and based in NYC"
 - **And** I can override any preference
@@ -416,7 +415,7 @@ Step 5: Recruiter clicks alert → conversation opens with candidate cards
 
 | Category | Requirement | Measurement |
 |----------|-------------|-------------|
-| Page load | <200ms for Chat UI initial render | Lighthouse |
+| Page load | <200ms for Agent Portal initial render | Lighthouse |
 | CRUD operations | <100ms for agent API responses (excluding LLM call) | API metrics |
 | Agent response time | <5s for intent parsing + tool delegation; <15s total with LLM | Agent metrics |
 | Vector search | <500ms for pgvector skill search | DB metrics |
@@ -636,78 +635,225 @@ CREATE INDEX idx_preference_events_recruiter ON preference_learning_events(recru
 
 ## 12. UI/UX Design
 
-### 12.1 Layout
+### 12.1 Interaction Paradigm: Hybrid
 
-Three-panel responsive layout:
+The UI combines three interaction modes, accessible from any view:
+
+| Mode | Role | Access |
+|------|------|--------|
+| **Activity Feed** | Primary default view. Chronological timeline of agent suggestions, recruiter actions, system events. Agent participates as a collaborator. | Top-level tab |
+| **Pipeline / Kanban** | Job-scoped visual pipeline (Sourced → Reviewing → Submitted → Interviewing → Placed). For bottleneck spotting and stage management. | Top-level tab |
+| **Command Panel** | Persistent right-side panel. Full agent conversation always visible. Natural language and slash commands. Three states (see §12.3). | Always present, right panel |
+
+**Navigation:** Top-level tab bar (Feed | Pipeline | Jobs | Preferences | Analytics). No sidebars. Command panel persists across all tab switches.
+
+### 12.2 Layout
+
+#### 12.2.1 Page Structure
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATS Agent Portal — Recruiter Dashboard                        │
-├──────────────┬──────────────────────────┬───────────────────────┤
-│  Sidebar     │  Chat Panel (Center)     │  Context Panel (Right)│
-│  (240px)     │  (flex)                  │  (320px)              │
-│              │                          │                       │
-│ [+ New Chat] │  ┌──────────────────┐    │  📋 Open Jobs         │
-│              │  │ 🤖 Proactive     │    │  ────────────         │
-│  Conversations│     Alert          │    │                       │
-│  ─────────── │  │ I found 3 strong  │    │  TCS — Java Lead    │
-│  • TCS Java  │     matches for     │    │  Wipro — PM          │
-│  • Wipro PM  │     your TCS Java   │    │  Infy — Data Scientist│
-│  • Infy Dev  │     role            │    │                       │
-│              │     [View Matches]  │    │  ⭐ Top Matches       │
-│  ⚙ Settings  │  └──────────────────┘    │  ────────────         │
-│              │                          │                       │
-│              │  ──────────────────────  │  1. Jane Doe          │
-│              │                          │  Sr. Java Developer   │
-│              │  👤 "Find candidates for │  ★★★★★ 92%            │
-│              │   TCS Java role"         │  [View] [Submit]      │
-│              │                          │                       │
-│              │  🤖 Here are your top    │  2. John Smith        │
-│              │     matches:             │  Sr. Python Dev       │
-│              │                          │  ★★★★☆ 87%            │
-│              │  ┌──────────────────┐    │  [View] [Submit]      │
-│              │  │ 🃏 Jane Doe      │    │                       │
-│              │  │ Title: Sr. Java  │    │  📊 Recent Activity   │
-│              │  │ Exp: 7 years     │    │  ────────────         │
-│              │  │ Fit: 92%         │    │  • Submitted Jane to  │
-│              │  │ [View] [Submit]  │    │    TCS Java Lead      │
-│              │  └──────────────────┘    │  • Rejected 2 candidates│
-│              │  ┌──────────────────┐    │  • Updated preferences │
-│              │  │ 🃏 John Smith    │    │                       │
-│              │  │ ...              │    │                       │
-│              │  └──────────────────┘    │                       │
-│              │                          │                       │
-│              │  ──────────────────────  │                       │
-│              │  [Type a message...] 📎  │                       │
-│              └──────────────────────────┴───────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  Top Nav: ⚡ ATS Agent | Feed | Pipeline | Jobs | Prefs | Ana   │
+├──────────────────────────────────────────┬───────────────────────┤
+│                                          │                       │
+│   Main Content Area                      │  Command Panel        │
+│   (switches per tab)                     │  (persistent)         │
+│                                          │                       │
+│   Feed: activity timeline                │  Chat thread          │
+│   Pipeline: 5-col kanban                │  Action buttons       │
+│   Jobs: card list                        │  Inline cards         │
+│   Preferences: explicit + implicit       │  Quick action chips   │
+│   Analytics: charts (future)             │  /commands            │
+│                                          │                       │
+└──────────────────────────────────────────┴───────────────────────┘
 ```
 
-### 12.2 Component Inventory
+#### 12.2.2 Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| ≥1280px | Full two-panel layout (main + command panel at 340px) |
+| 1024–1279px | Command panel collapses to icon; expands on click |
+| 768–1023px | Single column; command panel becomes bottom sheet |
+| <768px | Mobile-optimized; tabs become bottom nav; command panel is full-screen overlay |
+
+### 12.3 Visual Theme: Warm Indigo
+
+#### 12.3.1 Color Palette
+
+```
+Surface base:        #faf9f7  (warm off-white)
+Surface raised:      #f5f4f1  (card backgrounds)
+Surface hover:       #eeedea  (hover states)
+Border:              #e2e0db  (dividers, outlines)
+
+Primary:             #4f46e5  (indigo 600 — main CTAs, active states)
+Primary light:       #eef2ff  (indigo 50 — badge backgrounds)
+Primary hover:       #4338ca  (indigo 700)
+
+Success:             #16a34a  (green 600)
+Warning:             #d97706  (amber 600)
+Error:               #dc2626  (red 600)
+AI/Agent:            #9333ea  (purple 600)
+
+Text primary:        #1c1917  (warm black)
+Text secondary:      #57534e  (warm gray 600)
+Text tertiary:       #a8a29e  (warm gray 400)
+
+Shadow:              rgba(0, 0, 0, 0.04) — card shadows
+Overlay:             rgba(28, 25, 23, 0.3) — modals
+```
+
+#### 12.3.2 Typography
+
+Font stack: `Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif`
+
+```
+H1: 24px / 700 / 1.2    — page titles
+H2: 18px / 600 / 1.3    — section headings
+H3: 15px / 600 / 1.4    — card titles
+Body: 14px / 400 / 1.5  — main UI text
+Body small: 13px / 400 / 1.5 — secondary info
+Caption: 11px / 500 / 1.4   — labels, timestamps, badges
+```
+
+#### 12.3.3 Spacing & Radius
+
+4px base scale: 4, 8, 12, 16, 24, 32, 48, 64
+
+| Element | Border Radius |
+|---------|--------------|
+| Cards, panels | 8px |
+| Buttons, inputs | 6px |
+| Badges, chips | 4px |
+| Avatars | 50% |
+| Pill tags | 9999px |
+
+### 12.4 Command Panel States
+
+| State | Width | When | Features |
+|-------|-------|------|----------|
+| **Compact Chat** | 340px | Default | Conversation thread, input bar, quick action chips |
+| **Expanded Detail** | 440px | On candidate/job card click | Full profile: avatar, contact, fit breakdown, strengths/gaps, skills, CTA buttons. Breadcrumb "← Back to chat" |
+| **Side-by-Side Compare** | 440px (split) | On `/compare` command | Two 50% columns. Side-by-side fit scores, skills, gaps. Only for candidate comparison |
+
+### 12.5 AI Output Distinction (EU AI Act)
+
+All AI-generated content must be visually distinguishable:
+
+| Badge | Color | When |
+|-------|-------|------|
+| `AI-GENERATED` | Indigo 50 bg, Indigo 600 text | Standard AI output |
+| `LOW CONFIDENCE` | Amber 50 bg, Amber 600 text | Confidence <70% |
+| `AGENT SUGGESTION` | Purple 50 bg, Purple 600 text | Proactive (unsolicited) output |
+| `PREFERENCE UPDATED` | Purple 50 bg, Purple 600 text | Preference learning events |
+| `LEARNING` | Purple 50 bg, Purple 600 text | Weekly digest, learning summaries |
+
+Every AI output also shows a confidence percentage (0–100%). Low-confidence assertions (<70%) require manual confirmation before actions.
+
+### 12.6 View Specifications
+
+#### 12.6.1 Activity Feed
+
+- Chronological, reverse-chronological (newest first)
+- Grouped by date: "Today", "Yesterday", date headers
+- Feed item types: agent match, user message, submission event, learning digest, system alert
+- Each item: left border color indicates type (indigo=AI, green=user action, purple=learning, red=alert)
+- Inline actions on agent items: Approve, Review, Reject buttons
+- Clicking a candidate name opens Command Panel in Expanded Detail state
+- Clicking a job link navigates to Pipeline view scoped to that job
+
+#### 12.6.2 Pipeline / Kanban
+
+- 5 columns: Sourced → Reviewing → Submitted → Interviewing → Placed
+- Column header: name + count badge
+- Column widths: flex, with minimum 160px per column
+- Job context bar at top with job title, req ID, "new since yesterday" counter
+- Candidate cards within columns: name, title, experience, fit score + stars, skill tags
+- Agent integration: "+3 new matches" card in Sourced column; gap indicators on candidate cards
+- Actions: Approve/Reject inline on Reviewing cards; "→ Review" link on Sourced cards
+
+#### 12.6.3 Jobs List
+
+- Card-based list of all open jobs
+- Each card shows: client + role, req ID, location, candidate count, pipeline summary (e.g., "8R · 3S · 1I")
+- Color-coded left border: blue=healthy, yellow=needs attention, green=on track, red=critical
+- Agent insights: per-card status line ("Strong pipeline", "Pipeline too thin", "No candidates yet")
+- Click opens Pipeline view scoped to that job
+
+#### 12.6.4 Preferences & Learning
+
+**Explicit Preferences** (hard rules): list of active rules with toggle, "Add Rule" button
+**Implicit / Learned Preferences**: learned patterns with name, confidence level (High/Medium/Low), evidence count, visual strength bar (0–100%)
+**Weekly Learning Summary**: banner with stats, trends, Accept/Revert/Dismiss actions
+
+#### 12.6.5 Command Panel (Detail State)
+
+Content: avatar + name + contact info + location + work authorization; current role vs. target role; fit score breakdown (Skills Match, Experience, Preference Alignment); strengths (green) and gaps (red); skills as colored pill tags; action buttons (Approve & Submit, View Resume, Draft Outreach, Reject, Compare, Save for later); source attribution.
+
+### 12.7 Component Inventory
 
 | Component | Props | State | Data Source |
 |-----------|-------|-------|-------------|
-| `ChatWindow` | `sessionId?`, `onAlertClick` | Local message queue, input text | SWR (history), SSE (streaming) |
-| `MessageBubble` | `message: AgentMessage` | Expanded/collapsed | Props |
-| `CandidateCard` | `candidate, fitScore, strengths, gaps, actions` | Expanded details | API on expand |
-| `JobCard` | `job, submissionStatus` | Collapsed/expanded | SWR |
-| `ProactiveAlert` | `alert` | Dismissed/read | SSE push |
-| `PreferencePanel` | `recruiterId` | Edit mode | API (GET/PUT) |
-| `ContextPanel` | `activeTab` | Tab selection | SWR (jobs, matches, activity) |
-| `ActionButtons` | `actions: AgentAction[]` | Loading/success/error | API call on click |
+| `AppShell` | — | Active tab, command panel state | React state |
+| `TopNav` | — | Active tab | React state |
+| `TabBar` | — | Active tab | Props |
+| `FeedView` | — | Loading/empty/error | SWR (feed items) |
+| `DateGroup` | `date` | — | Props |
+| `FeedItem` | `item: FeedItem` | Expanded/collapsed | Props |
+| `FeedBadge` | `type: FeedItemType` | — | Props |
+| `InlineCard` | `card: StructuredCard` | Expanded | API on expand |
+| `FeedActions` | `actions: AgentAction[]` | Loading/success/error | API call on click |
+| `PipelineView` | `jobId?` | Loading/empty/error | SWR (pipeline data) |
+| `PipelineColumn` | `stage, candidates` | — | Props |
+| `PipelineCard` | `candidate, stage` | Selected | API on click |
+| `PipelineSummary` | `job` | — | Props |
+| `JobCard` | `job` | — | SWR |
+| `AgentInsight` | `insight` | — | Props |
+| `PreferencesView` | — | Loading/empty/error | API (GET/PUT) |
+| `ExplicitPreferences` | — | Edit mode | API (GET/PUT) |
+| `ImplicitPreferences` | — | Override/remove | API (PUT) |
+| `LearningDigest` | — | Accept/revert/dismiss | API (PUT) |
+| `CommandPanel` | — | Compact/expanded/compare | React state |
+| `CompactChat` | — | Scroll position | React state |
+| `MessageThread` | `messages` | — | Props |
+| `CommandMessage` | `message` | — | Props |
+| `InputBar` | `onSend` | Input text, loading | React state |
+| `QuickActionChips` | — | Click handler | API call on click |
+| `ExpandedDetail` | `candidate?` | Loading | API on load |
+| `SideBySideCompare` | `candidates[]` | — | Props |
+| `QuickReviewOverlay` | `candidates[]` | Current index, progress | React state |
+| `FitBadge` | `score` | — | Props |
+| `SkillTags` | `skills[]` | — | Props |
+| `EmptyState` | `message, action?` | — | Props |
+| `ErrorState` | `message, retry?` | Retry handler | API call on retry |
+| `Skeleton` | `count` | — | Props |
 
-### 12.3 Agent Message Schema
+### 12.8 Agent Message Schema
 
 ```typescript
+type FeedItemType = 'agent' | 'user' | 'system' | 'alert';
+
+interface FeedItem {
+  id: string;
+  type: FeedItemType;
+  content: string;
+  badge?: string;                    // AI-GENERATED, LOW CONFIDENCE, etc.
+  cards?: StructuredCard[];
+  actions?: AgentAction[];
+  created_at: string;
+}
+
 interface AgentMessage {
   id: string;
   role: 'agent' | 'user' | 'system';
-  content: string;                    // Natural language response
-  cards: StructuredCard[];            // Visual cards embedded in message
-  actions: AgentAction[];             // Action buttons below message
-  sources: SourceRef[];               // Data provenance
-  confidence?: number;                // 0.0 – 1.0
-  isProactive?: boolean;              // Agent-initiated vs. user-initiated
-  createdAt: string;                  // ISO timestamp
+  content: string;
+  cards: StructuredCard[];
+  actions: AgentAction[];
+  sources: SourceRef[];
+  confidence?: number;
+  is_proactive?: boolean;
+  created_at: string;
 }
 
 type StructuredCard =
@@ -719,28 +865,45 @@ type StructuredCard =
 
 interface AgentAction {
   id: string;
-  label: string;                      // Button text: "Approve", "Submit", "Reject"
+  label: string;
   type: 'approve' | 'reject' | 'submit' | 'edit_preference' | 'schedule_interview' | 'draft_outreach';
-  payload: Record<string, unknown>;   // Candidate ID, job ID, etc.
-  confirmation?: string;              // Confirmation dialog text
+  payload: Record<string, unknown>;
+  confirmation?: string;
 }
 
 interface SourceRef {
   type: 'internal_db' | 'job_board' | 'sub_vendor' | 'client_portal';
-  identifier: string;                 // Source-specific ID
+  identifier: string;
   timestamp: string;
+}
+
+const PIPELINE_STAGES = ['sourced', 'reviewing', 'submitted', 'interviewing', 'placed'] as const;
+type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+interface Job {
+  id: string;
+  req_id: string;
+  client_name: string;
+  role_title: string;
+  location: string;
+  status: 'healthy' | 'needs_attention' | 'on_track' | 'critical';
+  domains: string[];
+  candidate_count: number;
+  pipeline_summary: string;
+  agent_insight: string;
 }
 ```
 
-### 12.4 UX Principles
+### 12.9 UX Principles
 
 1. **AI output is always distinguishable** — "AI-generated" badge, distinct styling, confidence score visible
 2. **Human approval gate** — Every submission, rejection, and outreach send requires explicit recruiter action
-3. **Progressive disclosure** — Chat shows summaries; click to expand full candidate profile
-4. **Preference transparency** — Recruiter can see, edit, and override all learned preferences
+3. **Progressive disclosure** — Feed shows summaries; click to expand full candidate profile in Command Panel
+4. **Preference transparency** — Recruiter can see, edit, and override all learned preferences in dedicated tab
 5. **Proactive but not annoying** — Alerts are batched (max 3/hour), configurable, dismissible
-6. **Error recovery** — If agent is uncertain, it asks clarifying questions instead of guessing
-7. **Consistent with ATS conventions** — Matches existing ATS color scheme, typography, and interaction patterns
+6. **Error recovery** — If agent is uncertain, it asks clarifying questions instead of guessing; graceful degradation to manual search
+7. **Hybrid interaction** — Activity Feed as primary view, Pipeline for visual management, Command Panel for agent conversation — recruiter chooses the mode per task
+8. **Consistent visual system** — Warm Indigo theme, 4px spacing scale, Inter typography, uniform border radius
 
 ---
 
@@ -755,8 +918,8 @@ interface SourceRef {
 | **Memory Store** | LangChain InMemoryStore (session) + PostgreSQL (long-term) | Ephemeral session memory, persistent long-term for GDPR compliance |
 | **Real-time Updates** | Server-Sent Events (SSE) | Simpler than WebSocket for server→client push; native FastAPI support |
 | **Task Queue** | ARQ (Async Redis Queue) | Lightweight, works with existing Redis infrastructure, async-native |
-| **Frontend** | Next.js 14 + React 18 + TypeScript + Tailwind CSS | No frontend exists; Next.js for SSR/SSG, Tailwind for rapid UI development |
-| **State Management** | React Query (TanStack Query) + React state | Server-state caching + local UI state |
+| **Frontend** | Next.js 14 + React 18 + TypeScript + Tailwind CSS | Next.js for SSR/SSG, Tailwind for rapid UI development with Warm Indigo theme |
+| **State Management** | React Query (TanStack Query) + React state + Zustand (UI store) | Server-state caching + local UI state + global panel state |
 | **Styling** | Tailwind CSS + Headless UI components | Rapid development, accessible components, themeable |
 | **Embedding Model** | OpenAI text-embedding-3-small (1536-dim) | Via AI Middleware Gateway; consistent with LLM provider |
 
@@ -773,7 +936,7 @@ interface SourceRef {
 - Orchestrator agent (LangGraph StateGraph) with basic intent parsing
 - Preference Engine: JSONB storage for explicit preferences, GET/PUT endpoints
 - Auth middleware integration: JWT validation, tenant isolation, recruiter context loading
-- Basic chat UI: ChatWindow, MessageBubble, input field, SSE streaming
+- Basic chat UI: CommandPanel, MessageThread, InputBar, SSE streaming
 
 **Acceptance Criteria:**
 - Recruiter can send a message and receive a streamed agent response
@@ -790,6 +953,7 @@ interface SourceRef {
 - Fit score computation: weighted combination of skill match, experience match, preference alignment
 - CandidateCard component: fit score visualization, strengths/gaps display, action buttons
 - Quick Review mode: batch candidate review with approve/reject/flag
+- FeedView with agent match items, PipelineView with sourced candidates
 
 **Acceptance Criteria:**
 - Recruiter can type "Find candidates for [job]" and receive ranked candidate cards
@@ -803,7 +967,7 @@ interface SourceRef {
 - Implicit preference learning: pgvector embedding updates from recruiter actions
 - Preference Learning Event tracking: `preference_learning_events` table writes
 - Learning loop: auto-update implicit preferences after each review batch
-- PreferencePanel UI: show explicit + implicit preferences, weekly learning digest
+- PreferencesView UI: explicit + implicit preferences, weekly learning digest
 - Confidence scoring: agent confidence on responses, low-confidence flagging
 - Bias monitoring: offline statistical bias checks on aggregated pseudonymized data
 
@@ -828,19 +992,22 @@ interface SourceRef {
 - Recruiter approval required before any email is sent
 - Outreach style preferences improve draft acceptance rate over time
 
-### Phase 5: Chat UI Polish (Weeks 13–16)
+### Phase 5: Agent Portal UI (Weeks 13–16)
 
 **Deliverables:**
-- Full Chat UI: sidebar, chat panel, context panel, responsive layout
-- ProactiveAlert component: banner for agent-initiated alerts
-- ContextPanel: open jobs, top matches, recent activity (tabbed)
-- AI output distinction: "AI-generated" badges, visual styling
-- Action buttons: approve, reject, submit, edit preferences, schedule interview
+- Full Agent Portal: TopNav, TabBar, AppShell, responsive layout
+- FeedView: activity timeline with date grouping, inline cards, action buttons
+- PipelineView: 5-col kanban with candidate cards, job context bar
+- JobsView: card list with pipeline summary, agent insight, color-coded status
+- CommandPanel: Compact Chat, Expanded Detail, Side-by-Side Compare states
+- ProactiveAlert: agent-initiated alerts in Command Panel + Feed
+- AI output distinction: AI-GENERATED, LOW CONFIDENCE, AGENT SUGGESTION badges
+- Action buttons: approve, reject, submit, edit preferences, compare on cards
 - Error states: loading, error, empty state, offline fallback
 - Accessibility: WCAG 2.1 AA compliance
 
 **Acceptance Criteria:**
-- Chat UI renders in <200ms (Lighthouse)
+- Agent Portal renders in <200ms (Lighthouse)
 - All AI-generated content is visually distinguishable
 - Proactive alerts delivered within 2 seconds of generation
 - WCAG 2.1 AA compliance verified
@@ -852,7 +1019,7 @@ interface SourceRef {
 - Proactive alert generation: match score threshold (default 0.85)
 - Alert batching: max 3 alerts per hour per recruiter
 - Notification preferences: recruiter can configure alert frequency and types
-- SSE push: real-time alert delivery to Chat UI
+- SSE push: real-time alert delivery to Command Panel
 
 **Acceptance Criteria:**
 - Sourcing pulse completes for all recruiters within 30-minute window
@@ -1071,6 +1238,8 @@ EU AI Act compliant audit trail.
 | **Fit Score** | A 0–1 score representing how well a candidate matches a job requirement, weighted by recruiter preferences. |
 | **Proactive Alert** | An agent-initiated notification when a strong candidate match is found. |
 | **Structured Card** | A visual component embedded in agent messages showing candidate profiles, job details, or actions. |
+| **Command Panel** | Persistent right-side panel with three states: Compact Chat, Expanded Detail, Side-by-Side Compare. |
+| **Activity Feed** | Primary default view — chronological timeline of agent suggestions, recruiter actions, system events. |
 | **PII Redaction** | The process of stripping personally identifiable information before sending data to external LLMs. |
 | **ZDR** | Zero Data Retention — LLM provider agreement that no data is stored or used for training. |
 | **EU AI Act** | European Union regulation on artificial intelligence, classifying candidate matching as High-Risk AI. |
@@ -1094,6 +1263,9 @@ EU AI Act compliant audit trail.
 | 2026-07-22 | Task queue: ARQ over Celery | Existing Redis infrastructure; async-native; lighter weight; fewer dependencies |
 | 2026-07-22 | Frontend: Next.js over Vue/Svelte | TypeScript support (consistent with LangGraph TS SDK); SSR for SEO on career pages; largest ecosystem |
 | 2026-07-22 | Embedding model: OpenAI text-embedding-3-small | Consistent with LLM provider (GPT-4o); 1536-dim sufficient for skill matching; via AI Middleware Gateway |
+| 2026-07-26 | Interaction paradigm: Hybrid (Feed + Pipeline + Command Panel) over chat-only | Recruiter needs multiple interaction modes — visual pipeline for bottleneck spotting, feed for chronological awareness, command panel for agent conversation |
+| 2026-07-26 | Navigation: Top-level tabs over sidebar | No sidebars; Command Panel persists across all views; cleaner information architecture |
+| 2026-07-26 | Visual theme: Warm Indigo over neutral default | Distinctive brand identity; warm tones reduce cognitive fatigue during long review sessions |
 
 ### B. References
 
@@ -1104,6 +1276,7 @@ EU AI Act compliant audit trail.
 | AI-Native Features Spec | `/docs/second-opinion/2026-07-21-ai-native-features-spec-mimo-review.md` |
 | Core Features Spec | `/docs/second-opinion/2026-07-21-core-features-spec-mimo-review.md` |
 | Agent Architecture Design Spec | `/docs/superpowers/specs/2026-07-22-agent-first-recruiter-portal-design.md` |
+| Agent Portal UI/UX Design Spec | `/docs/superpowers/specs/2026-07-26-agent-portal-ui-ux-design.md` |
 | Existing Backend Models | `/backend/app/models/` |
 | Existing Backend Routes | `/backend/app/routes/` |
 | Existing Backend Services | `/backend/app/services/` |

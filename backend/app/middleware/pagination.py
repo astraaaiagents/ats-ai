@@ -1,16 +1,17 @@
 from fastapi import Query
 
 
-class PaginationParams:
-    def __init__(
-        self,
-        cursor: str | None = Query(None, description="Pagination cursor"),
-        limit: int = Query(25, ge=1, le=100, description="Number of items per page"),
-        sort: str | None = Query(None, description="Sort field and direction (e.g., created_at:desc)"),
-    ) -> None:
-        self.cursor = cursor
-        self.limit = limit
-        self.sort = sort
+def PaginationParams(
+    cursor: str | None = Query(None, description="Pagination cursor"),
+    limit: int = Query(25, ge=1, le=500, description="Number of items per page"),
+    sort: str | None = Query(None, description="Sort field and direction (e.g., created_at:desc)"),
+):
+    """FastAPI dependency for pagination query parameters."""
+    return type("PaginationParams", (), {
+        "cursor": cursor,
+        "limit": limit,
+        "sort": sort,
+    })()
 
 
 def paginated_response(data: list, total: int, limit: int, sort: str | None = None) -> dict:
