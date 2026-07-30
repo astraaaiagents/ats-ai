@@ -60,10 +60,22 @@ async def get_candidate(
 ) -> Candidate:
     """Get a candidate by ID with optional related data."""
     from uuid import UUID
+    from sqlalchemy.orm import selectinload
 
-    result = await db.execute(
-        select(Candidate).where(Candidate.id == UUID(candidate_id))
-    )
+    query = select(Candidate).where(Candidate.id == UUID(candidate_id))
+
+    options = []
+    if include_skills:
+        options.append(selectinload(Candidate.skills))
+    if include_documents:
+        options.append(selectinload(Candidate.documents))
+    if include_timeline:
+        options.append(selectinload(Candidate.timeline))
+
+    if options:
+        query = query.options(*options)
+
+    result = await db.execute(query)
     candidate = result.scalar_one_or_none()
     if not candidate:
         raise AppException(

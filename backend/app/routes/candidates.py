@@ -38,38 +38,66 @@ from app.services.candidate import (
 candidates_router = APIRouter(prefix="/candidates", tags=["candidates"])
 
 
+from sqlalchemy import inspect
+
+
 def _candidate_to_response(candidate: Candidate) -> CandidateResponse:
-    """Convert Candidate model to response schema."""
-    skills = [
-        CandidateSkillResponse(
-            id=str(s.id),
-            skill_name=s.skill_name,
-            proficiency=s.proficiency,
-            years_experience=s.years_experience,
-        )
-        for s in candidate.skills
-    ]
-    documents = [
-        CandidateDocumentResponse(
-            id=str(d.id),
-            document_type=d.document_type,
-            file_name=d.file_name,
-            file_size_bytes=d.file_size_bytes,
-            s3_key=d.s3_key,
-            created_at=d.created_at.isoformat(),
-        )
-        for d in candidate.documents
-    ]
-    timeline = [
-        CandidateTimelineEvent(
-            id=str(t.id),
-            event_type=t.event_type,
-            description=t.description,
-            metadata=t.details,
-            created_at=t.created_at.isoformat(),
-        )
-        for t in candidate.timeline
-    ]
+    """Convert Candidate model to response schema safely."""
+    try:
+        state = inspect(candidate)
+        unloaded = getattr(state, "unloaded", set())
+        if not isinstance(unloaded, (set, list, tuple, dict, frozenset)):
+            unloaded = set()
+    except Exception:
+        unloaded = set()
+
+    skills = []
+    if "skills" not in unloaded:
+        raw_skills = getattr(candidate, "skills", None) or []
+        if isinstance(raw_skills, (list, tuple)):
+            skills = [
+                CandidateSkillResponse(
+                    id=str(s.id),
+                    skill_name=s.skill_name,
+                    proficiency=s.proficiency,
+                    years_experience=s.years_experience,
+                )
+                for s in raw_skills
+                if hasattr(s, "id") and hasattr(s, "skill_name")
+            ]
+
+    documents = []
+    if "documents" not in unloaded:
+        raw_docs = getattr(candidate, "documents", None) or []
+        if isinstance(raw_docs, (list, tuple)):
+            documents = [
+                CandidateDocumentResponse(
+                    id=str(d.id),
+                    document_type=d.document_type,
+                    file_name=d.file_name,
+                    file_size_bytes=d.file_size_bytes,
+                    s3_key=d.s3_key,
+                    created_at=d.created_at.isoformat() if hasattr(d, "created_at") and d.created_at else "",
+                )
+                for d in raw_docs
+                if hasattr(d, "id")
+            ]
+
+    timeline = []
+    if "timeline" not in unloaded:
+        raw_tl = getattr(candidate, "timeline", None) or []
+        if isinstance(raw_tl, (list, tuple)):
+            timeline = [
+                CandidateTimelineEvent(
+                    id=str(t.id),
+                    event_type=t.event_type,
+                    description=t.description,
+                    metadata=t.details if hasattr(t, "details") else getattr(t, "metadata", None),
+                    created_at=t.created_at.isoformat() if hasattr(t, "created_at") and t.created_at else "",
+                )
+                for t in raw_tl
+                if hasattr(t, "id")
+            ]
 
     return CandidateResponse(
         id=str(candidate.id),
@@ -93,8 +121,8 @@ def _candidate_to_response(candidate: Candidate) -> CandidateResponse:
         skills=skills,
         documents=documents,
         timeline=timeline,
-        created_at=candidate.created_at.isoformat(),
-        updated_at=candidate.updated_at.isoformat(),
+        created_at=candidate.created_at.isoformat() if hasattr(candidate, "created_at") and candidate.created_at else "",
+        updated_at=candidate.updated_at.isoformat() if hasattr(candidate, "updated_at") and candidate.updated_at else "",
     )
 
 
