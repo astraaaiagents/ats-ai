@@ -29,7 +29,7 @@ class APIClient:
             resp = httpx.get(url, headers=self.headers, timeout=10.0)
             if resp.status_code == 200:
                 data = resp.json()
-                return data.get("items", [])
+                return data.get("data", data.get("items", []))
             return []
         except Exception as exc:
             logger.error(f"Error fetching action log: {exc}")
@@ -91,7 +91,7 @@ class APIClient:
             resp = httpx.get(url, headers=self.headers, timeout=10.0)
             if resp.status_code == 200:
                 data = resp.json()
-                return data.get("items", [])
+                return data.get("data", data.get("items", []))
             return []
         except Exception as exc:
             logger.error(f"Error fetching candidates: {exc}")
