@@ -34,6 +34,11 @@ dev = [
 ats-bootstrap = "backend.scripts.bootstrap:main"
 ats-setup-rls = "backend.scripts.setup_rls:main"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*", "scripts*", "db*"]
+
 [build-system]
 requires = ["setuptools>=75.0"]
 build-backend = "setuptools.build_meta"
+

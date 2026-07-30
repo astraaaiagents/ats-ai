@@ -31,6 +31,61 @@ def render_pipeline_view(client: APIClient):
     st.header("📊 Candidate Pipeline")
     st.caption("Manage candidate status transitions across pipeline stages.")
 
+    with st.expander("➕ **Add New Candidate**", expanded=False):
+        with st.form("create_candidate_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            with c1:
+                first_name = st.text_input("First Name *")
+                email = st.text_input("Email *")
+                current_title = st.text_input("Current Title")
+                location = st.text_input("Location (e.g. San Francisco, CA)")
+                salary_min = st.number_input("Salary Expectation Min ($)", min_value=0, value=0, step=10000)
+            with c2:
+                last_name = st.text_input("Last Name *")
+                phone = st.text_input("Phone Number")
+                current_employer = st.text_input("Current Employer")
+                visa_status = st.selectbox("Visa Status", options=["US Citizen", "Green Card", "H1B", "L1", "TN", "Other"])
+                salary_max = st.number_input("Salary Expectation Max ($)", min_value=0, value=0, step=10000)
+
+            skills_input = st.text_input("Skills (comma-separated, e.g. Python, FastAPI, Docker, PostgreSQL)")
+            ai_summary = st.text_area("Candidate Summary / Notes")
+
+            submit_cand = st.form_submit_button("Create Candidate", type="primary", use_container_width=True)
+
+            if submit_cand:
+                if not first_name.strip() or not last_name.strip() or not email.strip():
+                    st.error("First Name, Last Name, and Email are required.")
+                else:
+                    skills_list = []
+                    if skills_input.strip():
+                        for sk in skills_input.split(","):
+                            sk_str = sk.strip()
+                            if sk_str:
+                                skills_list.append({"skill_name": sk_str, "proficiency": "intermediate"})
+
+                    payload = {
+                        "first_name": first_name.strip(),
+                        "last_name": last_name.strip(),
+                        "email": email.strip(),
+                        "phone": phone.strip() or None,
+                        "current_title": current_title.strip() or None,
+                        "current_employer": current_employer.strip() or None,
+                        "location": location.strip() or None,
+                        "visa_status": visa_status,
+                        "salary_expectation_min": salary_min if salary_min > 0 else None,
+                        "salary_expectation_max": salary_max if salary_max > 0 else None,
+                        "ai_summary": ai_summary.strip() or None,
+                        "skills": skills_list,
+                        "source": "streamlit_portal",
+                        "status": "sourced"
+                    }
+                    success, res = client.create_candidate(payload)
+                    if success:
+                        st.success(f"Candidate {first_name} {last_name} created successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to create candidate: {res}")
+
     col_search, col_filter, col_refresh = st.columns([3, 1, 1])
     with col_search:
         search_query = st.text_input("🔍 Search candidates by name or email...", key="pipeline_search")

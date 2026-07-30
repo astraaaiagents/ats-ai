@@ -98,10 +98,10 @@ async def list_client_contacts(
 async def create_client_contact(
     body: ClientContactCreate,
     db: AsyncSession = Depends(get_session),
-    _current_user=Depends(require_role(["admin", "manager"])),
+    current_user=Depends(require_role(["admin", "manager", "recruiter", "super_admin"])),
 ):
     """Create a client contact. Admin/Manager only."""
-    org_id = getattr(_current_user, "organization_id", None)
+    org_id = getattr(current_user, "organization_id", None)
 
     # Check for duplicate email within org
     existing = await db.execute(
@@ -141,10 +141,10 @@ async def update_client_contact(
     contact_id: str,
     body: ClientContactUpdate,
     db: AsyncSession = Depends(get_session),
-    _current_user=Depends(require_role(["admin", "manager"])),
+    current_user=Depends(require_role(["admin", "manager", "recruiter", "super_admin"])),
 ):
     """Update client contact. Admin/Manager only."""
-    org_id = getattr(_current_user, "organization_id", None)
+    org_id = getattr(current_user, "organization_id", None)
 
     result = await db.execute(
         select(ClientContact).where(
@@ -191,10 +191,10 @@ async def update_client_contact(
 async def delete_client_contact(
     contact_id: str,
     db: AsyncSession = Depends(get_session),
-    _current_user=Depends(require_role(["admin", "manager"])),
+    current_user=Depends(require_role(["admin", "manager", "recruiter", "super_admin"])),
 ):
     """Soft-delete client contact (set is_active=False). Admin/Manager only."""
-    org_id = getattr(_current_user, "organization_id", None)
+    org_id = getattr(current_user, "organization_id", None)
 
     result = await db.execute(
         select(ClientContact).where(

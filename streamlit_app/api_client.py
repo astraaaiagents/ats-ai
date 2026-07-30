@@ -120,6 +120,53 @@ class APIClient:
             logger.error(f"Error fetching candidates: {exc}")
             return []
 
+    def create_candidate(self, candidate_data: Dict[str, Any]) -> tuple[bool, Dict[str, Any] | str]:
+        """Create a new candidate in the database."""
+        try:
+            url = f"{self.base_url}/candidates"
+            resp = httpx.post(url, json=candidate_data, headers=self.headers, timeout=10.0)
+            if resp.status_code in (200, 201):
+                return True, resp.json()
+            try:
+                err_data = resp.json()
+                err_msg = err_data.get("error", {}).get("message") or f"HTTP {resp.status_code}"
+            except Exception:
+                err_msg = resp.text or f"HTTP {resp.status_code}"
+            return False, err_msg
+        except Exception as exc:
+            logger.error(f"Error creating candidate: {exc}")
+            return False, str(exc)
+
+    def get_client_contacts(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Fetch list of client contacts / job requisitions."""
+        try:
+            url = f"{self.base_url}/client-contacts?limit={limit}"
+            resp = httpx.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("data", data.get("items", []))
+            return []
+        except Exception as exc:
+            logger.error(f"Error fetching client contacts: {exc}")
+            return []
+
+    def create_client_contact(self, contact_data: Dict[str, Any]) -> tuple[bool, Dict[str, Any] | str]:
+        """Create a new client contact / job opening in the database."""
+        try:
+            url = f"{self.base_url}/client-contacts"
+            resp = httpx.post(url, json=contact_data, headers=self.headers, timeout=10.0)
+            if resp.status_code in (200, 201):
+                return True, resp.json()
+            try:
+                err_data = resp.json()
+                err_msg = err_data.get("error", {}).get("message") or f"HTTP {resp.status_code}"
+            except Exception:
+                err_msg = resp.text or f"HTTP {resp.status_code}"
+            return False, err_msg
+        except Exception as exc:
+            logger.error(f"Error creating client contact: {exc}")
+            return False, str(exc)
+
     def update_candidate_status(self, candidate_id: str, new_status: str) -> tuple[bool, str]:
         """Update a candidate's pipeline status."""
         try:
