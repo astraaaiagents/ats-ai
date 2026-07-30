@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import DateTime, ForeignKey, JSON, String, Uuid as UUID, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+JSON_VARIANT = JSON().with_variant(JSONB, "postgresql")
 
 
 class AuditLog(Base):
@@ -25,7 +27,7 @@ class AuditLog(Base):
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
     resource_type: Mapped[str] = mapped_column(String(100), nullable=False)
     resource_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    details: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
+    details: Mapped[dict | None] = mapped_column("metadata", JSON_VARIANT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

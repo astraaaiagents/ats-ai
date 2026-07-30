@@ -2,11 +2,13 @@ from typing import Any
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, func, text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Boolean, DateTime, JSON, String, Uuid as UUID, func, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+JSON_VARIANT = JSON().with_variant(JSONB, "postgresql")
 
 
 class Organization(Base):
@@ -17,7 +19,7 @@ class Organization(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    settings: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default={}, server_default=text("'{}'::jsonb"))
+    settings: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True, default={})
     kms_key_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

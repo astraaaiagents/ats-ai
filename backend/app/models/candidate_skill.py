@@ -1,8 +1,7 @@
 from typing import Any
 import uuid
 
-from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint, Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # pgvector Vector type — 1536 dimensions for OpenAI text-embedding-3-small

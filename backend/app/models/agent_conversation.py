@@ -6,15 +6,20 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    JSON,
     Numeric,
     String,
     Text,
+    Uuid as UUID,
     func,
+    text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+JSON_VARIANT = JSON().with_variant(JSONB, "postgresql")
 
 
 class AgentConversationSession(Base):
@@ -66,12 +71,12 @@ class AgentConversationMessage(Base):
     )
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    cards: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    actions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    sources: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    cards: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    actions: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    sources: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     confidence: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
     is_proactive: Mapped[bool] = mapped_column(
-        Boolean, server_default=func.cast("false", Boolean), nullable=False
+        Boolean, default=False, server_default=text("false"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

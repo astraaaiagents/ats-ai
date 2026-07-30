@@ -2,8 +2,7 @@ from typing import Any
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, String, Uuid as UUID, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base

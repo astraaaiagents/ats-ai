@@ -5,13 +5,17 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    JSON,
     String,
+    Uuid as UUID,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+JSON_VARIANT = JSON().with_variant(JSONB, "postgresql")
 
 
 class PreferenceLearningEvent(Base):
@@ -32,9 +36,9 @@ class PreferenceLearningEvent(Base):
         nullable=True,
     )
     job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    features_before: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    features_after: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    preference_delta: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    features_before: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    features_after: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    preference_delta: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

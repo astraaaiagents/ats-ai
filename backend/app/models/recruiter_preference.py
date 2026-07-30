@@ -7,16 +7,20 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    JSON,
     Numeric,
     String,
     Text,
+    Uuid as UUID,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+JSON_VARIANT = JSON().with_variant(JSONB, "postgresql")
 
 # pgvector Vector type — 1536 dimensions for OpenAI text-embedding-3-small
 try:
@@ -42,7 +46,7 @@ class RecruiterPreference(Base):
     # Example: {"min_experience_years": 5, "required_visa_status": "US_work_authorization",
     #           "preferred_locations": ["NYC", "Remote"], "max_notice_period_days": 30}
     explicit_preferences: Mapped[dict] = mapped_column(
-        "explicit_preferences", JSONB, nullable=False, server_default=text("'{}'::jsonb")
+        "explicit_preferences", JSON_VARIANT, nullable=False, default={}
     )
     # Implicit preference vector: 1536 dimensions (OpenAI text-embedding-3-small)
     # Learned from recruiter actions (approvals, rejections, outreach edits)
