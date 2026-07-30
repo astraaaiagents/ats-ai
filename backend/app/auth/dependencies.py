@@ -90,7 +90,8 @@ async def ensure_dev_user(db: AsyncSession) -> User:
 async def ensure_seed_candidates(db: AsyncSession) -> None:
     """Ensure mock candidates are populated in the database if empty."""
     try:
-        from app.models.candidate import Candidate, CandidateSkill
+        from app.models.candidate import Candidate
+        from app.models.candidate_skill import CandidateSkill
         from app.models.organization import Organization
 
         # Check if organization exists
