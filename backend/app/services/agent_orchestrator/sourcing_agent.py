@@ -54,8 +54,15 @@ async def search_candidates(
           current_employer, visa_status, notice_period_days,
           skills (list), fit_score (float), strengths (list), gaps (list)
     """
+    import uuid
     from app.models.candidate import Candidate
     from app.models.candidate_skill import CandidateSkill
+
+    if isinstance(org_id, str):
+        try:
+            org_id = uuid.UUID(org_id)
+        except ValueError:
+            pass
 
     # Step 1: Extract keywords from query for structured filtering
     keywords = _extract_keywords(query)
