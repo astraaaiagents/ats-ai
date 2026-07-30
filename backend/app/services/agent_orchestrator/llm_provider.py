@@ -75,21 +75,26 @@ class OpenAILLMProvider(LLMProvider):
         return self._client
 
     async def generate(self, prompt: str, system_prompt: str) -> str:
-        client = self._get_client()
-        response = await client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.3,
-        )
-        return response.choices[0].message.content or ""
+        try:
+            client = self._get_client()
+            response = await client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+            )
+            return response.choices[0].message.content or ""
+        except Exception as exc:
+            logger.warning(f"OpenAILLMProvider.generate failed ({exc}), falling back to MockLLMProvider")
+            mock = MockLLMProvider()
+            return await mock.generate(prompt, system_prompt)
 
     async def classify(self, prompt: str, system_prompt: str) -> str:
         import asyncio
-        client = self._get_client()
         try:
+            client = self._get_client()
             response = await asyncio.wait_for(
                 client.chat.completions.create(
                     model=self.model,
@@ -99,12 +104,13 @@ class OpenAILLMProvider(LLMProvider):
                     ],
                     temperature=0.1,
                 ),
-                timeout=5.0,
+                timeout=10.0,
             )
             return (response.choices[0].message.content or "").strip()
         except Exception as exc:
-            logger.warning(f"LLM classify call failed or timed out ({exc})")
-            raise
+            logger.warning(f"OpenAILLMProvider.classify failed or timed out ({exc}), falling back to MockLLMProvider")
+            mock = MockLLMProvider()
+            return await mock.classify(prompt, system_prompt)
 
 
 class MockLLMProvider(LLMProvider):

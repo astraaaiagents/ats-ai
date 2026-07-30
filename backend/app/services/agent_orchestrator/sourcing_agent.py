@@ -6,11 +6,15 @@ vector similarity search (pgvector) using Reciprocal Rank Fusion (RRF).
 Returns ranked candidate profiles with fit metadata for the Orchestrator.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.candidate import Candidate
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +90,9 @@ async def _structured_search(
     Matches keywords against title, location, employer, and skills fields.
     Returns candidates ranked by keyword match score.
     """
+    from sqlalchemy import or_
     from app.models.candidate import Candidate
+    from app.models.candidate_skill import CandidateSkill
 
     if not keywords:
         # No keywords — return all candidates (low score)
@@ -98,51 +104,32 @@ async def _structured_search(
         )
         return [(c, 0.1) for c in result.scalars().all()]
 
-    # Build OR clause for keyword matching (case-insensitive across candidates and candidate_skills)
-    or_parts = [
-        f"(POSITION(:kw{i} IN LOWER(COALESCE(current_title, ''))) > 0 "
-        f"OR POSITION(:kw{i} IN LOWER(COALESCE(location, ''))) > 0 "
-        f"OR POSITION(:kw{i} IN LOWER(COALESCE(current_employer, ''))) > 0 "
-        f"OR EXISTS (SELECT 1 FROM candidate_skills cs WHERE cs.candidate_id = candidates.id AND POSITION(:kw{i} IN LOWER(cs.skill_name)) > 0))"
-        for i in range(len(keywords))
-    ]
-    or_sql = " OR ".join(or_parts)
+    or_conditions = []
+    for kw in keywords:
+        pattern = f"%{kw}%"
+        or_conditions.append(Candidate.current_title.ilike(pattern))
+        or_conditions.append(Candidate.location.ilike(pattern))
+        or_conditions.append(Candidate.current_employer.ilike(pattern))
+        or_conditions.append(
+            Candidate.id.in_(
+                select(CandidateSkill.candidate_id).where(
+                    CandidateSkill.organization_id == org_id,
+                    CandidateSkill.skill_name.ilike(pattern),
+                )
+            )
+        )
 
-    params = {"org_id": org_id}
-    for i, kw in enumerate(keywords):
-        params[f"kw{i}"] = kw.lower()
-
-    # First, get matching candidate IDs
-    id_query = text(f"""
-        SELECT id
-        FROM candidates
-        WHERE organization_id = :org_id
-          AND status != 'archived'
-          AND (
-              {or_sql}
-          )
-        ORDER BY created_at
-        LIMIT :limit
-    """)
-
-    id_result = await db.execute(id_query, {**params, "limit": limit})
-    candidate_ids = [row[0] for row in id_result.all()]
-
-    if not candidate_ids:
-        return []
-
-    # Fetch full candidate records for matching IDs
     result = await db.execute(
         select(Candidate)
         .where(
             Candidate.organization_id == org_id,
-            Candidate.id.in_(candidate_ids),
             Candidate.status != "archived",
+            or_(*or_conditions),
         )
+        .order_by(Candidate.created_at.desc())
+        .limit(limit)
     )
     candidates = result.scalars().all()
-
-    # Return (Candidate, score) tuples — score is the RRF rank position
     return [(c, 1.0 / (i + 1)) for i, c in enumerate(candidates)]
 
 
@@ -152,13 +139,15 @@ async def _fts_search(
     query: str,
     limit: int,
 ) -> list[tuple[Candidate, float]]:
-    """Search candidates using PostgreSQL full-text search (tsvector).
+    """Search candidates using full-text search (tsvector on Postgres, ilike on SQLite).
 
-    Combines tsvector ranking with keyword matching across candidate
+    Combines ranking with keyword matching across candidate
     profile fields (title, employer, location) and candidate skills.
     """
     import re
+    from sqlalchemy import or_
     from app.models.candidate import Candidate
+    from app.models.candidate_skill import CandidateSkill
 
     keywords = _extract_keywords(query)
     if not keywords:
@@ -168,30 +157,61 @@ async def _fts_search(
     if not sanitized:
         return []
 
-    ts_query_str = " | ".join(sanitized)
+    bind = db.get_bind()
+    is_postgres = bind.dialect.name == "postgresql"
+
+    if is_postgres:
+        ts_query_str = " | ".join(sanitized)
+        result = await db.execute(
+            select(Candidate)
+            .where(
+                Candidate.organization_id == org_id,
+                Candidate.status != "archived",
+                text("""
+                    (
+                        to_tsvector('english',
+                            COALESCE(current_title, '') || ' ' ||
+                            COALESCE(current_employer, '') || ' ' ||
+                            COALESCE(location, '')
+                        ) @@ to_tsquery('english', :ts_query)
+                        OR EXISTS (
+                            SELECT 1 FROM candidate_skills cs
+                            WHERE cs.candidate_id = candidates.id
+                              AND to_tsvector('english', cs.skill_name) @@ to_tsquery('english', :ts_query)
+                        )
+                    )
+                """),
+            )
+            .limit(limit),
+            {"ts_query": ts_query_str},
+        )
+        candidates = result.scalars().all()
+        return [(c, 1.0 / (i + 1)) for i, c in enumerate(candidates)]
+
+    # Fallback for SQLite / non-Postgres: ILIKE keyword search
+    or_conditions = []
+    for kw in sanitized:
+        pattern = f"%{kw}%"
+        or_conditions.append(Candidate.current_title.ilike(pattern))
+        or_conditions.append(Candidate.location.ilike(pattern))
+        or_conditions.append(Candidate.current_employer.ilike(pattern))
+        or_conditions.append(
+            Candidate.id.in_(
+                select(CandidateSkill.candidate_id).where(
+                    CandidateSkill.organization_id == org_id,
+                    CandidateSkill.skill_name.ilike(pattern),
+                )
+            )
+        )
 
     result = await db.execute(
         select(Candidate)
         .where(
             Candidate.organization_id == org_id,
             Candidate.status != "archived",
-            text("""
-                (
-                    to_tsvector('english',
-                        COALESCE(current_title, '') || ' ' ||
-                        COALESCE(current_employer, '') || ' ' ||
-                        COALESCE(location, '')
-                    ) @@ to_tsquery('english', :ts_query)
-                    OR EXISTS (
-                        SELECT 1 FROM candidate_skills cs
-                        WHERE cs.candidate_id = candidates.id
-                          AND to_tsvector('english', cs.skill_name) @@ to_tsquery('english', :ts_query)
-                    )
-                )
-            """),
+            or_(*or_conditions),
         )
-        .limit(limit),
-        {"ts_query": ts_query_str},
+        .limit(limit)
     )
     candidates = result.scalars().all()
     return [(c, 1.0 / (i + 1)) for i, c in enumerate(candidates)]
