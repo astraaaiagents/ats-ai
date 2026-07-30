@@ -80,3 +80,67 @@ class APIClient:
         except Exception as exc:
             logger.error(f"Error streaming conversation: {exc}")
             yield {"event": "error", "data": {"message": str(exc)}}
+
+    def get_candidates(self, limit: int = 100, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Fetch list of candidates with optional status filter."""
+        try:
+            url = f"{self.base_url}/candidates?limit={limit}"
+            if status:
+                url += f"&status={status}"
+            resp = httpx.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("items", [])
+            return []
+        except Exception as exc:
+            logger.error(f"Error fetching candidates: {exc}")
+            return []
+
+    def update_candidate_status(self, candidate_id: str, new_status: str) -> bool:
+        """Update a candidate's pipeline status."""
+        try:
+            url = f"{self.base_url}/candidates/{candidate_id}/status"
+            payload = {"status": new_status, "reason": "Updated via Streamlit Portal"}
+            resp = httpx.patch(url, json=payload, headers=self.headers, timeout=10.0)
+            return resp.status_code == 200
+        except Exception as exc:
+            logger.error(f"Error updating candidate {candidate_id} status: {exc}")
+            return False
+
+    def get_proactive_alerts(self) -> List[Dict[str, Any]]:
+        """Fetch proactive AI alerts and feeds."""
+        try:
+            url = f"{self.base_url}/agent/proactive/alerts"
+            resp = httpx.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("alerts", [])
+            return []
+        except Exception as exc:
+            logger.error(f"Error fetching proactive alerts: {exc}")
+            return []
+
+    def get_preferences(self) -> Dict[str, Any]:
+        """Fetch recruiter preferences."""
+        try:
+            url = f"{self.base_url}/agent/preferences"
+            resp = httpx.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                return resp.json()
+            return {}
+        except Exception as exc:
+            logger.error(f"Error fetching preferences: {exc}")
+            return {}
+
+    def update_preferences(self, explicit: Dict[str, Any]) -> Dict[str, Any]:
+        """Update explicit recruiter preferences."""
+        try:
+            url = f"{self.base_url}/agent/preferences"
+            payload = {"explicit": explicit}
+            resp = httpx.put(url, json=payload, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                return resp.json()
+            return {}
+        except Exception as exc:
+            logger.error(f"Error updating preferences: {exc}")
+            return {}

@@ -18,3 +18,27 @@ def test_get_action_log(mock_get):
     items = client.get_action_log()
     assert len(items) == 1
     assert items[0]["id"] == "1"
+
+@patch("httpx.get")
+def test_get_candidates(mock_get):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"items": [{"id": "c1", "first_name": "Jane", "last_name": "Doe"}]}
+    mock_get.return_value = mock_resp
+
+    client = APIClient()
+    candidates = client.get_candidates()
+    assert len(candidates) == 1
+    assert candidates[0]["first_name"] == "Jane"
+
+@patch("httpx.get")
+def test_get_proactive_alerts(mock_get):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"alerts": [{"id": "a1", "title": "High Fit Score"}]}
+    mock_get.return_value = mock_resp
+
+    client = APIClient()
+    alerts = client.get_proactive_alerts()
+    assert len(alerts) == 1
+    assert alerts[0]["title"] == "High Fit Score"
