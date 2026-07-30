@@ -14,7 +14,8 @@ class APIClient:
         base_url: Optional[str] = None,
         token: Optional[str] = None,
     ):
-        self.base_url = (base_url or os.getenv("BACKEND_URL", "http://localhost:8000/api/v1")).rstrip("/")
+        default_url = os.getenv("BACKEND_URL") or os.getenv("NEXT_PUBLIC_API_URL") or "http://localhost:8001/api/v1"
+        self.base_url = (base_url or default_url).rstrip("/")
         self.token = token or os.getenv("STREAMLIT_API_TOKEN", "dev-token")
         self.headers = {
             "Authorization": f"Bearer {self.token}",
