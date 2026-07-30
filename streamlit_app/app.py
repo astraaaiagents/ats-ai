@@ -12,8 +12,8 @@ from streamlit_app.components.sidebar import render_sidebar
 from streamlit_app.components.chat_view import render_chat_view
 from streamlit_app.components.feed_view import render_feed_view
 from streamlit_app.components.pipeline_view import render_pipeline_view
+from streamlit_app.components.jobs_view import render_jobs_view
 from streamlit_app.components.preferences_view import render_preferences_view
-
 
 st.set_page_config(
     page_title="ATS AI - Recruiter Portal",
@@ -27,10 +27,11 @@ def main():
     render_sidebar(client)
 
     # Top-level Portal Tabs
-    tab_chat, tab_feed, tab_pipeline, tab_prefs = st.tabs([
+    tab_chat, tab_feed, tab_pipeline, tab_jobs, tab_prefs = st.tabs([
         "💬 Conversations",
         "⚡ Feeds & Alerts",
         "📊 Candidate Pipeline",
+        "💼 Job Openings",
         "⚙️ Preferences",
     ])
 
@@ -42,6 +43,9 @@ def main():
 
     with tab_pipeline:
         render_pipeline_view(client)
+
+    with tab_jobs:
+        render_jobs_view(client)
 
     with tab_prefs:
         render_preferences_view(client)
