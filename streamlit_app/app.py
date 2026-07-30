@@ -22,32 +22,47 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+TABS = [
+    "💬 Conversations",
+    "⚡ Feeds & Alerts",
+    "📊 Candidate Pipeline",
+    "💼 Job Openings",
+    "⚙️ Preferences",
+]
+
 def main():
     client = APIClient()
     render_sidebar(client)
 
-    # Top-level Portal Tabs
-    tab_chat, tab_feed, tab_pipeline, tab_jobs, tab_prefs = st.tabs([
-        "💬 Conversations",
-        "⚡ Feeds & Alerts",
-        "📊 Candidate Pipeline",
-        "💼 Job Openings",
-        "⚙️ Preferences",
-    ])
+    if "active_tab" not in st.session_state or st.session_state["active_tab"] not in TABS:
+        st.session_state["active_tab"] = "💬 Conversations"
 
-    with tab_chat:
+    if "nav_segmented_control" not in st.session_state:
+        st.session_state["nav_segmented_control"] = st.session_state["active_tab"]
+
+    # Top-level Portal Tab Navigation
+    selected_tab = st.segmented_control(
+        "Portal Navigation",
+        options=TABS,
+        selection_mode="single",
+        key="nav_segmented_control",
+        label_visibility="collapsed",
+    )
+
+    if selected_tab:
+        st.session_state["active_tab"] = selected_tab
+
+    active = st.session_state.get("active_tab", "💬 Conversations")
+
+    if active == "💬 Conversations":
         render_chat_view(client)
-
-    with tab_feed:
+    elif active == "⚡ Feeds & Alerts":
         render_feed_view(client)
-
-    with tab_pipeline:
+    elif active == "📊 Candidate Pipeline":
         render_pipeline_view(client)
-
-    with tab_jobs:
+    elif active == "💼 Job Openings":
         render_jobs_view(client)
-
-    with tab_prefs:
+    elif active == "⚙️ Preferences":
         render_preferences_view(client)
 
 if __name__ == "__main__":

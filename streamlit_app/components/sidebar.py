@@ -7,6 +7,12 @@ STARTER_PROMPTS = [
     {"title": "✉️ Draft Outreach", "prompt": "Draft personalized outreach emails for top candidates"},
 ]
 
+def _navigate_to_chat():
+    """Helper to switch active portal tab to Conversations & Chat view."""
+    st.session_state["active_tab"] = "💬 Conversations"
+    st.session_state["nav_segmented_control"] = "💬 Conversations"
+    st.session_state["view_mode"] = "chat"
+
 def render_sidebar(client: APIClient):
     """Render sidebar with session history and new conversation trigger."""
     st.sidebar.title("🤖 AI Recruiter Agent")
@@ -15,7 +21,7 @@ def render_sidebar(client: APIClient):
     if st.sidebar.button("➕ New Conversation", use_container_width=True, type="primary"):
         st.session_state["session_id"] = None
         st.session_state["messages"] = []
-        st.session_state["view_mode"] = "chat"
+        _navigate_to_chat()
         st.rerun()
 
     st.sidebar.divider()
@@ -26,7 +32,7 @@ def render_sidebar(client: APIClient):
             st.session_state["session_id"] = None
             st.session_state["messages"] = []
             st.session_state["pending_prompt"] = starter["prompt"]
-            st.session_state["view_mode"] = "chat"
+            _navigate_to_chat()
             st.rerun()
 
     st.sidebar.divider()
@@ -40,7 +46,7 @@ def render_sidebar(client: APIClient):
     for s in sessions:
         sid = s["id"]
         title = s.get("title") or f"Session {sid[:8]}"
-        is_active = st.session_state.get("session_id") == sid
+        is_active = st.session_state.get("session_id") == sid and st.session_state.get("active_tab") == "💬 Conversations"
         btn_label = f"💬 {title[:24]}" if not is_active else f"👉 {title[:24]}"
         if st.sidebar.button(btn_label, key=f"session_{sid}", use_container_width=True):
             st.session_state["session_id"] = sid
@@ -53,5 +59,5 @@ def render_sidebar(client: APIClient):
                 }
                 for msg in history
             ] if history else []
-            st.session_state["view_mode"] = "chat"
+            _navigate_to_chat()
             st.rerun()
