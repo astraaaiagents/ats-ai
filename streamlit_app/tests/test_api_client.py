@@ -1,0 +1,20 @@
+import pytest
+from unittest.mock import MagicMock, patch
+from streamlit_app.api_client import APIClient
+
+def test_api_client_init():
+    client = APIClient(base_url="http://localhost:8000/api/v1", token="dev-token")
+    assert client.base_url == "http://localhost:8000/api/v1"
+    assert client.headers["Authorization"] == "Bearer dev-token"
+
+@patch("httpx.get")
+def test_get_action_log(mock_get):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"items": [{"id": "1", "action_type": "intent_parse"}]}
+    mock_get.return_value = mock_resp
+
+    client = APIClient()
+    items = client.get_action_log()
+    assert len(items) == 1
+    assert items[0]["id"] == "1"
