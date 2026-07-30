@@ -120,16 +120,23 @@ class APIClient:
             logger.error(f"Error fetching candidates: {exc}")
             return []
 
-    def update_candidate_status(self, candidate_id: str, new_status: str) -> bool:
+    def update_candidate_status(self, candidate_id: str, new_status: str) -> tuple[bool, str]:
         """Update a candidate's pipeline status."""
         try:
             url = f"{self.base_url}/candidates/{candidate_id}/status"
             payload = {"status": new_status, "reason": "Updated via Streamlit Portal"}
             resp = httpx.patch(url, json=payload, headers=self.headers, timeout=10.0)
-            return resp.status_code == 200
+            if resp.status_code == 200:
+                return True, ""
+            try:
+                err_data = resp.json()
+                err_msg = err_data.get("error", {}).get("message") or f"HTTP {resp.status_code}"
+            except Exception:
+                err_msg = resp.text or f"HTTP {resp.status_code}"
+            return False, err_msg
         except Exception as exc:
             logger.error(f"Error updating candidate {candidate_id} status: {exc}")
-            return False
+            return False, str(exc)
 
     def get_proactive_alerts(self) -> List[Dict[str, Any]]:
         """Fetch proactive AI alerts and feeds."""

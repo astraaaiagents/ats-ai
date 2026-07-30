@@ -15,44 +15,48 @@ def normalize_status(status: str) -> str:
     s = str(status or "").strip().lower()
     return STATUS_ALIASES.get(s, s)
 
-# Valid transitions: from_status -> [allowed to_statuses]
 TRANSITIONS: dict[str, list[str]] = {
-    "sourced": ["in_review", "rejected"],
-    "in_review": ["submitted", "rejected"],
-    "submitted": ["interviewing", "rejected"],
-    "interviewing": ["shortlisted", "rejected"],
-    "shortlisted": ["offer_extended", "rejected"],
-    "offer_extended": ["placed", "rejected"],
-    "placed": [],  # terminal
-    "rejected": [],  # terminal
-    "archived": [],  # terminal
+    "sourced": ["in_review", "rejected", "archived"],
+    "in_review": ["submitted", "sourced", "rejected", "archived"],
+    "submitted": ["interviewing", "in_review", "rejected", "archived"],
+    "interviewing": ["shortlisted", "submitted", "rejected", "archived"],
+    "shortlisted": ["offer_extended", "interviewing", "rejected", "archived"],
+    "offer_extended": ["placed", "shortlisted", "rejected", "archived"],
+    "placed": [],
+    "rejected": [],
+    "archived": [],
 }
 
-# Role requirements for transitions
-# recruiter: can move sourced -> in_review, in_review -> submitted
-# manager: can approve submissions, extend offers
-# admin: full access
 ROLE_RESTRICTIONS: dict[str, dict[str, list[str]]] = {
     "recruiter": {
         "sourced": ["in_review"],
-        "in_review": ["submitted"],
+        "in_review": ["submitted", "sourced"],
+        "submitted": ["interviewing", "in_review"],
+        "interviewing": ["shortlisted", "submitted"],
+        "shortlisted": ["offer_extended", "interviewing"],
+        "offer_extended": ["placed", "shortlisted"],
+        "placed": [],
+        "rejected": [],
+        "archived": [],
     },
     "manager": {
-        "sourced": ["in_review", "submitted", "interviewing", "shortlisted", "offer_extended"],
+        "sourced": ["in_review", "submitted"],
         "in_review": ["submitted", "interviewing"],
-        "submitted": ["interviewing"],
+        "submitted": ["interviewing", "shortlisted"],
         "interviewing": ["shortlisted", "offer_extended"],
-        "shortlisted": ["offer_extended"],
+        "shortlisted": ["offer_extended", "placed"],
         "offer_extended": ["placed"],
+        "placed": [],
+        "rejected": [],
+        "archived": [],
     },
     "admin": {
-        # Admin can do any transition
-        "sourced": ["in_review", "rejected"],
-        "in_review": ["submitted", "rejected"],
-        "submitted": ["interviewing", "rejected"],
-        "interviewing": ["shortlisted", "rejected"],
-        "shortlisted": ["offer_extended", "rejected"],
-        "offer_extended": ["placed", "rejected"],
+        "sourced": ["in_review", "submitted", "interviewing", "shortlisted", "offer_extended", "placed"],
+        "in_review": ["sourced", "submitted", "interviewing", "shortlisted", "offer_extended", "placed"],
+        "submitted": ["sourced", "in_review", "interviewing", "shortlisted", "offer_extended", "placed"],
+        "interviewing": ["sourced", "in_review", "submitted", "shortlisted", "offer_extended", "placed"],
+        "shortlisted": ["sourced", "in_review", "submitted", "interviewing", "offer_extended", "placed"],
+        "offer_extended": ["sourced", "in_review", "submitted", "interviewing", "shortlisted", "placed"],
         "placed": [],
         "rejected": [],
         "archived": [],
@@ -73,6 +77,9 @@ def validate_transition(from_status: str, to_status: str, user_role: str = "recr
     """
     from_status = normalize_status(from_status)
     to_status = normalize_status(to_status)
+
+    if from_status == to_status:
+        return True
 
     if from_status not in TRANSITIONS:
         return False

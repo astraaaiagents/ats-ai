@@ -104,9 +104,9 @@ def render_pipeline_view(client: APIClient):
                 )
                 if new_status.lower() != cstatus:
                     if st.button("Update Stage", key=f"btn_update_{cid}", type="secondary"):
-                        success = client.update_candidate_status(cid, new_status.lower())
+                        success, err_msg = client.update_candidate_status(cid, new_status.lower())
                         if success:
                             st.success(f"Updated {cname} status to {new_status}!")
                             st.rerun()
                         else:
-                            st.error("Failed to update status. Transition may not be allowed for your user role.")
+                            st.error(f"Failed to update status: {err_msg}")
