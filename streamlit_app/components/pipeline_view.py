@@ -1,0 +1,71 @@
+import streamlit as st
+from streamlit_app.api_client import APIClient
+
+PIPELINE_STAGES = [
+    "sourced",
+    "in_review",
+    "submitted",
+    "interview",
+    "offer",
+    "hired",
+    "rejected",
+]
+
+def render_pipeline_view(client: APIClient):
+    """Render Candidate Pipeline Kanban / stage columns."""
+    st.header("📊 Candidate Pipeline")
+    st.caption("Manage candidate status transitions across pipeline stages.")
+
+    col_search, col_filter = st.columns([3, 1])
+    with col_search:
+        search_query = st.text_input("🔍 Search candidates by name or email...", key="pipeline_search")
+    with col_filter:
+        selected_stage = st.selectbox("Stage Filter", options=["All"] + PIPELINE_STAGES, key="pipeline_filter")
+
+    candidates = client.get_candidates(limit=100)
+
+    if search_query:
+        q = search_query.lower()
+        candidates = [
+            c for c in candidates
+            if q in f"{c.get('first_name', '')} {c.get('last_name', '')}".lower() or q in c.get('email', '').lower()
+        ]
+
+    if selected_stage != "All":
+        candidates = [c for c in candidates if str(c.get("status", "")).lower() == selected_stage.lower()]
+
+    if not candidates:
+        st.info("No candidates found matching the criteria.")
+        return
+
+    st.write(f"Displaying **{len(candidates)}** candidate(s):")
+
+    for cand in candidates:
+        cid = str(cand.get("id"))
+        cname = f"{cand.get('first_name', '')} {cand.get('last_name', '')}".strip() or "Unnamed Candidate"
+        cemail = cand.get("email", "N/A")
+        cstatus = str(cand.get("status", "sourced"))
+
+        with st.container(border=True):
+            cols = st.columns([3, 2, 2])
+            with cols[0]:
+                st.markdown(f"**👤 {cname}**")
+                st.caption(f"📧 {cemail}")
+            with cols[1]:
+                st.markdown(f"**Status:** `{cstatus.upper()}`")
+            with cols[2]:
+                current_idx = PIPELINE_STAGES.index(cstatus.lower()) if cstatus.lower() in PIPELINE_STAGES else 0
+                new_status = st.selectbox(
+                    "Move Stage",
+                    options=PIPELINE_STAGES,
+                    index=current_idx,
+                    key=f"stage_select_{cid}",
+                )
+                if new_status.lower() != cstatus.lower():
+                    if st.button("Update Stage", key=f"btn_update_{cid}", type="primary"):
+                        success = client.update_candidate_status(cid, new_status.lower())
+                        if success:
+                            st.success(f"Updated {cname} status to {new_status}!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to update status.")
