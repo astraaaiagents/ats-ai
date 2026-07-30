@@ -98,7 +98,7 @@ async def list_client_contacts(
 async def create_client_contact(
     body: ClientContactCreate,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(require_role(["admin", "manager", "recruiter", "super_admin"])),
+    current_user=Depends(require_role(["admin", "manager", "super_admin"])),
 ):
     """Create a client contact. Admin/Manager only."""
     org_id = getattr(current_user, "organization_id", None)
