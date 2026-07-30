@@ -1,4 +1,3 @@
-import json
 import streamlit as st
 from streamlit_app.api_client import APIClient
 
@@ -16,6 +15,7 @@ def render_sidebar(client: APIClient):
     if st.sidebar.button("➕ New Conversation", use_container_width=True, type="primary"):
         st.session_state["session_id"] = None
         st.session_state["messages"] = []
+        st.session_state["view_mode"] = "chat"
         st.rerun()
 
     st.sidebar.divider()
@@ -26,56 +26,32 @@ def render_sidebar(client: APIClient):
             st.session_state["session_id"] = None
             st.session_state["messages"] = []
             st.session_state["pending_prompt"] = starter["prompt"]
+            st.session_state["view_mode"] = "chat"
             st.rerun()
 
     st.sidebar.divider()
     st.sidebar.subheader("Recent Conversations")
 
-    logs = client.get_action_log(limit=25)
-    seen_sessions = set()
-    sessions = []
-
-    for log in logs:
-        sid = log.get("session_id")
-        prompt_text = ""
-        inp = log.get("input_pseudonymized")
-        if inp:
-            try:
-                inp_json = json.loads(inp) if isinstance(inp, str) else inp
-                if not sid:
-                    sid = inp_json.get("session_id")
-                prompt_text = inp_json.get("message", "")
-            except Exception:
-                pass
-
-        if not sid:
-            sid = log.get("id")
-
-        if sid and sid not in seen_sessions:
-            seen_sessions.add(sid)
-            label = (prompt_text[:22] + "...") if prompt_text else f"Session {sid[:8]}"
-            sessions.append({
-                "id": sid,
-                "label": label,
-                "time": str(log.get("created_at", ""))[:10],
-            })
+    sessions = client.get_sessions(limit=25)
 
     if not sessions:
         st.sidebar.info("No active conversation history")
 
     for s in sessions:
-        is_active = st.session_state.get("session_id") == s["id"]
-        btn_label = f"💬 {s['label']}" if not is_active else f"👉 {s['label']}"
-        if st.sidebar.button(btn_label, key=f"session_{s['id']}", use_container_width=True):
-            st.session_state["session_id"] = s["id"]
-            history = client.get_conversation_history(s["id"])
-            if history:
-                st.session_state["messages"] = [
-                    {
-                        "role": msg.get("role", "assistant"),
-                        "content": msg.get("content", ""),
-                        "cards": msg.get("cards", []),
-                    }
-                    for msg in history
-                ]
+        sid = s["id"]
+        title = s.get("title") or f"Session {sid[:8]}"
+        is_active = st.session_state.get("session_id") == sid
+        btn_label = f"💬 {title[:24]}" if not is_active else f"👉 {title[:24]}"
+        if st.sidebar.button(btn_label, key=f"session_{sid}", use_container_width=True):
+            st.session_state["session_id"] = sid
+            history = client.get_conversation_history(sid)
+            st.session_state["messages"] = [
+                {
+                    "role": msg.get("role", "assistant"),
+                    "content": msg.get("content", ""),
+                    "cards": msg.get("cards", []),
+                }
+                for msg in history
+            ] if history else []
+            st.session_state["view_mode"] = "chat"
             st.rerun()

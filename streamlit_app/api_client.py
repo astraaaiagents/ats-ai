@@ -35,6 +35,19 @@ class APIClient:
             logger.error(f"Error fetching action log: {exc}")
             return []
 
+    def get_sessions(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Fetch list of recent conversation sessions."""
+        try:
+            url = f"{self.base_url}/agent/sessions?limit={limit}"
+            resp = httpx.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("data", [])
+            return []
+        except Exception as exc:
+            logger.error(f"Error fetching sessions: {exc}")
+            return []
+
     def get_conversation_history(self, session_id: str) -> List[Dict[str, Any]]:
         """Fetch history for a specific session."""
         try:

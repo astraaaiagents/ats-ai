@@ -223,7 +223,41 @@ async def conversation(
     )
 
 
+# --- GET /sessions ---
+
+
+@agent_router.get(
+    "/sessions",
+    response_model=dict,
+)
+async def list_sessions(
+    limit: int = 50,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """List recent conversation sessions for the current user."""
+    result = await db.execute(
+        select(AgentConversationSession)
+        .where(AgentConversationSession.recruiter_id == UUID(str(current_user.id)))
+        .order_by(AgentConversationSession.updated_at.desc())
+        .limit(limit)
+    )
+    sessions = result.scalars().all()
+    return {
+        "data": [
+            {
+                "id": str(s.id),
+                "title": s.title or f"Conversation {str(s.id)[:8]}",
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            }
+            for s in sessions
+        ]
+    }
+
+
 # --- GET /conversation/{session_id} ---
+
 
 
 @agent_router.get(
