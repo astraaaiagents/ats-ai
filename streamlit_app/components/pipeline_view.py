@@ -3,24 +3,32 @@ from streamlit_app.api_client import APIClient
 
 PIPELINE_STAGES = [
     "sourced",
+    "screening",
     "in_review",
     "submitted",
     "interview",
+    "interviewing",
     "offer",
+    "placed",
     "hired",
     "rejected",
 ]
 
 def render_pipeline_view(client: APIClient):
-    """Render Candidate Pipeline Kanban / stage columns."""
+    """Render Candidate Pipeline view."""
     st.header("📊 Candidate Pipeline")
     st.caption("Manage candidate status transitions across pipeline stages.")
 
-    col_search, col_filter = st.columns([3, 1])
+    col_search, col_filter, col_refresh = st.columns([3, 1, 1])
     with col_search:
         search_query = st.text_input("🔍 Search candidates by name or email...", key="pipeline_search")
     with col_filter:
         selected_stage = st.selectbox("Stage Filter", options=["All"] + PIPELINE_STAGES, key="pipeline_filter")
+    with col_refresh:
+        st.write("")
+        st.write("")
+        if st.button("🔄 Refresh", use_container_width=True):
+            st.rerun()
 
     candidates = client.get_candidates(limit=100)
 
@@ -44,12 +52,19 @@ def render_pipeline_view(client: APIClient):
         cid = str(cand.get("id"))
         cname = f"{cand.get('first_name', '')} {cand.get('last_name', '')}".strip() or "Unnamed Candidate"
         cemail = cand.get("email", "N/A")
+        ctitle = cand.get("current_title", "")
+        company = cand.get("current_employer", "")
+        clocation = cand.get("location", "")
         cstatus = str(cand.get("status", "sourced"))
+
+        sub_info = " | ".join(filter(None, [ctitle, company, clocation]))
 
         with st.container(border=True):
             cols = st.columns([3, 2, 2])
             with cols[0]:
                 st.markdown(f"**👤 {cname}**")
+                if sub_info:
+                    st.markdown(f"💼 *{sub_info}*")
                 st.caption(f"📧 {cemail}")
             with cols[1]:
                 st.markdown(f"**Status:** `{cstatus.upper()}`")
