@@ -271,14 +271,38 @@ async def get_conversation(
     current_user: User = Depends(get_current_user),
 ):
     """Retrieve conversation history for a session."""
-    # Verify session belongs to current user
+    try:
+        target_uuid = UUID(session_id)
+    except ValueError:
+        raise AppException(
+            code="INVALID_INPUT",
+            message="Invalid UUID format for session_id",
+            status_code=400,
+        )
+
+    # 1. Try direct lookup in AgentConversationSession
     result = await db.execute(
         select(AgentConversationSession).where(
-            AgentConversationSession.id == UUID(session_id),
-            AgentConversationSession.recruiter_id == UUID(str(current_user.id)),
+            AgentConversationSession.id == target_uuid,
         )
     )
     session = result.scalar_one_or_none()
+
+    # 2. Fallback: Check if session_id was an AgentAction log ID
+    if not session:
+        action_res = await db.execute(
+            select(AgentAction).where(AgentAction.id == target_uuid)
+        )
+        action = action_res.scalar_one_or_none()
+        if action and action.session_id:
+            target_uuid = action.session_id
+            result = await db.execute(
+                select(AgentConversationSession).where(
+                    AgentConversationSession.id == target_uuid,
+                )
+            )
+            session = result.scalar_one_or_none()
+
     if not session:
         raise AppException(
             code="NOT_FOUND",
@@ -286,9 +310,9 @@ async def get_conversation(
             status_code=404,
         )
 
-    messages = await agent_service.get_session_messages(db, session_id)
+    messages = await agent_service.get_session_messages(db, str(target_uuid))
     return ConversationHistoryResponse(
-        session_id=session_id,
+        session_id=str(target_uuid),
         title=session.title,
         messages=[agent_service._message_to_response(m) for m in messages],
     )
