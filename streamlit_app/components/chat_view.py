@@ -9,13 +9,10 @@ from streamlit_app.components.cards import (
 def render_chat_view(client: APIClient):
     """Render conversation list or active chat session view."""
     if "view_mode" not in st.session_state:
-        if st.session_state.get("session_id") or st.session_state.get("messages") or st.session_state.get("pending_prompt"):
-            st.session_state["view_mode"] = "chat"
-        else:
-            st.session_state["view_mode"] = "list"
+        st.session_state["view_mode"] = "list"
 
-    # Pending prompt or explicit session selection automatically switches to chat view
-    if st.session_state.get("pending_prompt") or st.session_state.get("session_id"):
+    # Pending prompt forces chat view for active submission
+    if st.session_state.get("pending_prompt"):
         st.session_state["view_mode"] = "chat"
 
     if st.session_state["view_mode"] == "list":
@@ -75,6 +72,8 @@ def _render_active_chat_view(client: APIClient):
     col_nav, col_new = st.columns([3, 1])
     with col_nav:
         if st.button("⬅️ Back to Conversations List"):
+            st.session_state["session_id"] = None
+            st.session_state["messages"] = []
             st.session_state["view_mode"] = "list"
             st.rerun()
     with col_new:
