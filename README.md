@@ -2,11 +2,16 @@
 
 A cloud-based, multi-tenant applicant tracking system built for external recruitment and staffing agencies serving the US, UK, and EU markets. AI functions exclusively as decision support — all candidate ranking and shortlist decisions require human approval. Classified as a **High-Risk AI System** under EU AI Act Annex III, Point 4(a).
 
-## UI Mockup (GitHub Pages)
+## Portals & Interfaces
 
-| Mockup | Link |
-|--------|------|
-| Agent-First Recruiter Portal | https://astraaaiagents.github.io/ats-ai/agent-portal.html |
+| Component | Stack | Default URL |
+|-----------|-------|-------------|
+| **Streamlit Portal** | Streamlit | `http://localhost:8501` |
+| **Next.js Web Portal** | Next.js 14, Tailwind, React | `http://localhost:3000` |
+| **FastAPI Backend** | FastAPI, Async SQLAlchemy 2.0, Postgres, Redis | `http://localhost:8001` (Docs: `/docs`) |
+| **GitHub Pages Mockup** | HTML/JS | https://astraaaiagents.github.io/ats-ai/agent-portal.html |
+
+---
 
 ## Product Overview
 
@@ -34,49 +39,137 @@ USA, UK, EU — with GDPR/UK GDPR/CCPA alignment and EU AI Act compliance built 
 
 ---
 
-## Backend Implementation
+## Technical Architecture & AI Multi-Agent System
 
-**Stack:** FastAPI (async) · SQLAlchemy 2.0+ (async) · PostgreSQL · Redis · JWT (python-jose) · bcrypt
+- **Backend:** FastAPI (async) · SQLAlchemy 2.0+ (async) · PostgreSQL (pgvector + tsvector) · Redis · JWT (python-jose) · bcrypt
+- **Multi-tenant Isolation:** Tenant scoping via `SET LOCAL app.organization_id` + PostgreSQL Row-Level Security (RLS) policies
+- **Agent Orchestrator:** LangGraph state graph with discrete specialist nodes:
+  - **IntentClassifier:** LLM-based intent recognition with instant 5s fallback to keyword matching
+  - **SourcingAgent:** Hybrid search combining SQL filters, full-text search (`tsvector`), and vector similarity (`pgvector`) via Reciprocal Rank Fusion (RRF)
+  - **RankingAgent:** Deterministic fit-score engine evaluating candidate skills, experience, and recruiter preferences
+  - **OutreachAgent:** LLM-powered candidate email and message drafting
+- **Real-Time Streaming:** Server-Sent Events (SSE) emitting `message_start`, `content`, `card`, `action`, and `message_end`
 
-### Architecture
+---
 
-- **Multi-tenant:** Tenant isolation via `SET LOCAL app.organization_id` + PostgreSQL RLS
-- **Auth:** JWT access + refresh tokens, Bearer `HTTPBearer`, token versioning for revocation
-- **Pagination:** Cursor-based (default 25, max 100)
-- **Error handling:** `AppException(code, message, status_code)` → `{"error": {...}}`
-- **Migrations:** Raw Alembic Python files in `backend/db/versions/`
-
-### Current API Surface
+## Current API Surface
 
 | Endpoint | Method | Access | Description |
 |----------|--------|--------|-------------|
 | `/api/v1/health` | GET | Public | Health check |
 | `/api/v1/auth/*` | — | Mixed | Login, register, refresh, password reset |
-| `/api/v1/candidates/*` | — | Authenticated | CRUD, skills, timeline, status, duplicates |
-| `/api/v1/organizations` | POST | SuperAdmin | Create organization |
-| `/api/v1/organizations/:id` | GET/PUT | SuperAdmin | Read/update organization |
-| `/api/v1/users` | GET | Admin/Manager | List users (cursor pagination) |
-| `/api/v1/users/invite` | POST | Admin/Manager | Invite via 48h magic link |
-| `/api/v1/users/:id` | PUT/DELETE | Admin/Manager | Update/deactivate user |
-| `/api/v1/client-contacts` | GET/POST | Admin/Manager | List/create client contacts |
-| `/api/v1/client-contacts/:id` | PUT/DELETE | Admin/Manager | Update/soft-delete |
+| `/api/v1/agent/conversation` | POST | Authenticated | Send message, stream response via SSE |
+| `/api/v1/agent/sessions` | GET/DELETE | Authenticated | List or delete recruiter conversation sessions |
+| `/api/v1/agent/preferences` | GET/PUT | Authenticated | Read or update explicit recruiter preferences |
+| `/api/v1/agent/proactive/alerts` | GET | Authenticated | Fetch proactive AI notifications and candidate alerts |
+| `/api/v1/agent/action-log` | GET | Authenticated | EU AI Act audit trail log |
+| `/api/v1/candidates/*` | — | Authenticated | CRUD, skills, timeline, status transitions, duplicates |
+| `/api/v1/organizations` | POST/GET/PUT | SuperAdmin | Multi-tenant organization administration |
+| `/api/v1/users` | GET/POST/PUT/DELETE | Admin/Manager | List, invite, update, or deactivate users |
+| `/api/v1/client-contacts` | GET/POST/PUT/DELETE | Admin/Manager | Client contact management |
 
-### Test Suite
+---
 
-**68 tests passing** — integration tests using `httpx.ASGITransport` (no real server), Redis mocked via `mock_redis` fixture. Coverage includes CRUD, role enforcement, auth enforcement, duplicate validation, tenant isolation, token revocation.
+## How to Run Locally
 
-### Running Locally
+### Prerequisites
 
+- Python 3.11+
+- Node.js 18+ and `npm`
+- PostgreSQL (with `pgvector` extension) & Redis (or run via Docker Compose)
+
+---
+
+### Option 1: Manual Local Setup
+
+#### 1. Configure Environment Variables
+Copy `.env.example` to `.env` in the root and `backend/` directories:
 ```bash
-# From the backend/ directory
-cp .env.example .env          # edit DATABASE_URL, JWT_SECRET, REDIS_URL
-pytest                        # run tests (no external services needed)
-uvicorn app.main:app          # dev server
+cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
-Or from repo root with full stack:
+Key environment settings in `backend/.env`:
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ats_ai
+REDIS_URL=redis://localhost:6379/0
+DEV_MODE=true
+BYPASS_AUTH=true
+OPENAI_API_KEY=1234
+OPENAI_BASE_URL=http://localhost:8000/v1
+OPENAI_MODEL=Qwen3.5-4B-MLX-4bit
+```
+
+#### 2. Setup & Start Backend (FastAPI)
 ```bash
-docker compose up
+cd backend
+
+# Create & activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations & initial setup
+alembic -c db/alembic.ini upgrade head
+python -m scripts.bootstrap
+python -m scripts.setup_rls
+
+# Start backend server on port 8001
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+#### 3. Start Streamlit Recruiter Portal
+In a new terminal window:
+```bash
+# From repo root with active virtualenv
+source backend/.venv/bin/activate
+streamlit run streamlit_app/app.py
+```
+Open `http://localhost:8501` in your browser.
+
+#### 4. Start Next.js Frontend (Optional)
+In a new terminal window:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:3000` in your browser.
+
+---
+
+### Option 2: Docker Compose (Full Stack)
+
+From repo root:
+```bash
+docker compose up --build
+```
+This starts PostgreSQL, Redis, and the FastAPI API backend containerized.
+
+---
+
+## Running Tests
+
+### Backend Unit & Integration Tests
+**241+ tests passing** — runs fully mock-isolated (no external service or LLM required):
+```bash
+cd backend
+.venv/bin/pytest
+```
+
+To run a specific test file:
+```bash
+cd backend
+.venv/bin/pytest tests/test_agent_routes.py -v
+```
+
+### End-to-End Playwright Tests
+Run real browser E2E tests against Next.js / Streamlit portals:
+```bash
+cd frontend
+npx playwright test
 ```
 
 ---

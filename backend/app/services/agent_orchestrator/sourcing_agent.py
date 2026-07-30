@@ -83,7 +83,7 @@ async def _structured_search(
 ) -> list[tuple[Candidate, float]]:
     """Search candidates using structured keyword matching.
 
-    Matches keywords against title, location, employer fields.
+    Matches keywords against title, location, employer, and skills fields.
     Returns candidates ranked by keyword match score.
     """
     from app.models.candidate import Candidate
@@ -98,13 +98,19 @@ async def _structured_search(
         )
         return [(c, 0.1) for c in result.scalars().all()]
 
-    # Build OR clause for keyword matching (embedded as raw SQL, not a param)
-    or_parts = [f"POSITION(:kw{i} IN current_title) > 0 OR POSITION(:kw{i} IN location) > 0 OR POSITION(:kw{i} IN current_employer) > 0" for i in range(len(keywords))]
-    or_sql = " OR ".join(f"({part})" for part in or_parts)
+    # Build OR clause for keyword matching (case-insensitive across candidates and candidate_skills)
+    or_parts = [
+        f"(POSITION(:kw{i} IN LOWER(COALESCE(current_title, ''))) > 0 "
+        f"OR POSITION(:kw{i} IN LOWER(COALESCE(location, ''))) > 0 "
+        f"OR POSITION(:kw{i} IN LOWER(COALESCE(current_employer, ''))) > 0 "
+        f"OR EXISTS (SELECT 1 FROM candidate_skills cs WHERE cs.candidate_id = candidates.id AND POSITION(:kw{i} IN LOWER(cs.skill_name)) > 0))"
+        for i in range(len(keywords))
+    ]
+    or_sql = " OR ".join(or_parts)
 
     params = {"org_id": org_id}
     for i, kw in enumerate(keywords):
-        params[f"kw{i}"] = kw
+        params[f"kw{i}"] = kw.lower()
 
     # First, get matching candidate IDs
     id_query = text(f"""
@@ -149,28 +155,43 @@ async def _fts_search(
     """Search candidates using PostgreSQL full-text search (tsvector).
 
     Combines tsvector ranking with keyword matching across candidate
-    profile fields (title, employer, location).
+    profile fields (title, employer, location) and candidate skills.
     """
+    import re
     from app.models.candidate import Candidate
 
-    # Use ts_rank for full-text search ranking
-    # In production, create a tsvector column on candidates table
-    # For MVP, use a simpler approach with ILIKE
+    keywords = _extract_keywords(query)
+    if not keywords:
+        return []
+
+    sanitized = [re.sub(r'[^a-zA-Z0-9]', '', kw) for kw in keywords if re.sub(r'[^a-zA-Z0-9]', '', kw)]
+    if not sanitized:
+        return []
+
+    ts_query_str = " | ".join(sanitized)
+
     result = await db.execute(
         select(Candidate)
         .where(
             Candidate.organization_id == org_id,
             Candidate.status != "archived",
             text("""
-                to_tsvector('english',
-                    COALESCE(current_title, '') || ' ' ||
-                    COALESCE(current_employer, '') || ' ' ||
-                    COALESCE(location, '')
-                ) @@ plainto_tsquery('english', :query)
+                (
+                    to_tsvector('english',
+                        COALESCE(current_title, '') || ' ' ||
+                        COALESCE(current_employer, '') || ' ' ||
+                        COALESCE(location, '')
+                    ) @@ to_tsquery('english', :ts_query)
+                    OR EXISTS (
+                        SELECT 1 FROM candidate_skills cs
+                        WHERE cs.candidate_id = candidates.id
+                          AND to_tsvector('english', cs.skill_name) @@ to_tsquery('english', :ts_query)
+                    )
+                )
             """),
         )
         .limit(limit),
-        {"query": query},
+        {"ts_query": ts_query_str},
     )
     candidates = result.scalars().all()
     return [(c, 1.0 / (i + 1)) for i, c in enumerate(candidates)]
@@ -189,22 +210,24 @@ async def _vector_search(
 
     Falls back to ILIKE skill name matching if no embeddings exist.
     """
+    from sqlalchemy import or_
     from app.models.candidate import Candidate
     from app.models.candidate_skill import CandidateSkill
 
-    try:
-        # Try pgvector cosine similarity search
-        # First, we need to embed the query — for MVP, we use the first
-        # skill keyword from the query as a proxy
-        query_skill = query.split()[0] if query else ""
+    keywords = _extract_keywords(query)
+    if not keywords:
+        return []
 
-        # Find skills matching the query keyword, then get their embeddings
+    try:
+        # Try pgvector cosine similarity search using extracted keywords
+        skill_conditions = [CandidateSkill.skill_name.ilike(f"%{kw}%") for kw in keywords]
+
         skills_result = await db.execute(
             select(CandidateSkill.skill_embedding)
             .where(
                 CandidateSkill.organization_id == org_id,
                 CandidateSkill.skill_embedding.isnot(None),
-                CandidateSkill.skill_name.ilike(f"%{query_skill}%"),
+                or_(*skill_conditions),
             )
             .limit(10)
         )
@@ -252,12 +275,13 @@ async def _vector_search(
     except Exception as exc:
         logger.warning(f"pgvector search failed ({exc}), falling back to ILIKE")
 
-    # Fallback: ILIKE skill name matching
+    # Fallback: ILIKE skill name matching for all extracted keywords
+    skill_conditions = [CandidateSkill.skill_name.ilike(f"%{kw}%") for kw in keywords]
     result = await db.execute(
         select(CandidateSkill)
         .where(
             CandidateSkill.organization_id == org_id,
-            CandidateSkill.skill_name.ilike(f"%{query.split()[0]}%") if query else False,
+            or_(*skill_conditions),
         )
         .limit(limit * 5)
     )
@@ -278,6 +302,7 @@ async def _vector_search(
         select(Candidate).where(
             Candidate.organization_id == org_id,
             Candidate.id.in_(candidate_ids),
+            Candidate.status != "archived",
         )
     )
     candidates = result.scalars().all()
@@ -306,7 +331,12 @@ def _rrf_fusion(
 
     for lst in lists:
         for rank, (item, _score) in enumerate(lst, start=1):
-            item_id = str(getattr(item, "id", item.get("id", "")))
+            if hasattr(item, "id"):
+                item_id = str(item.id)
+            elif isinstance(item, dict):
+                item_id = str(item.get("id", ""))
+            else:
+                item_id = str(item)
             scores[item_id] = scores.get(item_id, 0) + (1.0 / (rrf_constant + rank))
             items[item_id] = item
 
@@ -417,6 +447,8 @@ def _extract_keywords(query: str) -> list[str]:
     Returns:
         List of keywords (lowercase, no stop words).
     """
+    import re
+
     stop_words = {
         "me", "for", "the", "a", "an", "is", "are", "was", "were",
         "find", "search", "show", "get", "i", "want", "need", "can",
@@ -424,10 +456,20 @@ def _extract_keywords(query: str) -> list[str]:
         "what", "which", "who", "how", "where", "when", "why", "do",
         "did", "does", "would", "could", "should", "may", "might",
         "but", "and", "or", "not", "no", "be", "it", "its",
+        "source", "candidate", "candidates", "top", "requiring", "require",
+        "requires", "required", "looking", "seeking", "role", "position",
+        "job", "skills", "skill", "experience", "strong", "match", "matches",
+        "please", "give", "list", "bring", "fetch", "who", "have", "has",
     }
 
     words = query.lower().split()
-    keywords = [w for w in words if w not in stop_words and len(w) > 2]
+    cleaned_words = []
+    for w in words:
+        cleaned = re.sub(r'^[^\w]+|[^\w]+$', '', w)
+        if cleaned:
+            cleaned_words.append(cleaned)
+
+    keywords = [w for w in cleaned_words if w not in stop_words and len(w) > 1]
 
     # Deduplicate while preserving order
     seen = set()

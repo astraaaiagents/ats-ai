@@ -47,24 +47,23 @@ RULES: Final = [
         "draft outreach", "draft an email", "draft an outreach",
         "reach out to", "write to", "invite to",
         "draft email", "draft message", "outreach message",
-        "email", "message", "contact",
+        "write an email", "send an email",
+    ]),
+    (INTENT_CHECK_PIPELINE, [
+        "pipeline", "status", "progress", "tracking",
+        "submitted", "shortlist", "shortlisted",
+        "what's happening", "upcoming",
+        "where are my", "pipeline status",
     ]),
     (INTENT_UPDATE_PREFERENCES, [
         "remember", "preference", "always", "never",
-        "don't want", "don't like", "require",
-        "setting", "filter", "rule", "criteria",
-        "only", "add rule", "remove rule",
-    ]),
-    (INTENT_CHECK_PIPELINE, [
-        "pipeline", "status", "progress", "where", "tracking",
-        "submitted", "shortlist", "shortlisted",
-        "what's happening", "upcoming", "tracking",
-        "where are my", "pipeline status",
+        "don't want", "don't like",
+        "setting", "add rule", "remove rule", "filter rule",
     ]),
     (INTENT_SOURCE_CANDIDATES, [
-        "find", "search", "candidates", "candidate", "who has",
-        "java", "python", "developer", "engineer", "role", "job",
-        "match", "suitable", "qualified",
+        "source", "find", "search", "candidates", "candidate", "who has",
+        "developer", "engineer", "qualified", "top matches", "top candidates",
+        "java", "python", "react",
     ]),
 ]
 

@@ -62,25 +62,31 @@ export function CompactChat() {
             )
           );
         } else if (et === "card") {
-          const cardData = (event as any).data as ChatCard | undefined;
-          if (cardData) {
-            cards.push(cardData);
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === streamingMsgId ? { ...m, cards: [...(m.cards || []), cardData] } : m
-              )
-            );
-          }
+          const rawEvent = event as any;
+          const cardObj: ChatCard = {
+            type: rawEvent.type || rawEvent.data?.type || "candidate",
+            data: rawEvent.data || rawEvent,
+            fitScore: rawEvent.fitScore ?? rawEvent.fit_score ?? rawEvent.data?.fitScore,
+          };
+          cards.push(cardObj);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === streamingMsgId ? { ...m, cards: [...(m.cards || []), cardObj] } : m
+            )
+          );
         } else if (et === "action") {
-          const actionPayload = (event as any).payload as ChatAction | undefined;
-          if (actionPayload) {
-            actions.push(actionPayload);
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === streamingMsgId ? { ...m, actions: [...(m.actions || []), actionPayload] } : m
-              )
-            );
-          }
+          const rawEvent = event as any;
+          const actionObj: ChatAction = {
+            id: rawEvent.id || rawEvent.payload?.id,
+            label: rawEvent.label || rawEvent.payload?.label || "Action",
+            payload: rawEvent.payload,
+          };
+          actions.push(actionObj);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === streamingMsgId ? { ...m, actions: [...(m.actions || []), actionObj] } : m
+            )
+          );
         } else if (et === "message_start" && (event as any).session_id) {
           setSessionId((event as any).session_id);
         }

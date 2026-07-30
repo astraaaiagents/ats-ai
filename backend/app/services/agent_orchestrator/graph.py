@@ -55,6 +55,7 @@ async def source_candidates_node(state: OrchestratorState) -> dict:
         candidates=candidates,
         recruiter_id=state["recruiter_id"],
         job_id=state.get("job_id"),
+        query=query,
     )
 
     # Build cards and actions

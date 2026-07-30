@@ -3,16 +3,29 @@ from typing import Dict, Any
 
 def render_candidate_card(card: Dict[str, Any]):
     """Render structured candidate card."""
+    data = card.get("data") if isinstance(card.get("data"), dict) else card
+
+    first_name = data.get("first_name", "")
+    last_name = data.get("last_name", "")
+    full_name = f"{first_name} {last_name}".strip()
+    name = full_name or data.get("name") or data.get("candidate_name") or card.get("name") or "Candidate"
+
+    title = data.get("current_title") or data.get("title") or card.get("title") or "N/A"
+    location = data.get("location") or card.get("location") or ""
+    experience = data.get("experience") or data.get("years_experience") or card.get("experience") or "N/A"
+
     with st.container(border=True):
         col1, col2 = st.columns([3, 1])
         with col1:
-            name = card.get("name") or card.get("candidate_name") or "Candidate"
-            title = card.get("title") or card.get("current_title") or "N/A"
-            experience = card.get("experience") or card.get("years_experience") or "N/A"
             st.markdown(f"**👤 {name}**")
-            st.caption(f"Role: {title} • Exp: {experience}")
+            sub_info = f"Role: {title}"
+            if location:
+                sub_info += f" • 📍 {location}"
+            if experience != "N/A":
+                sub_info += f" • Exp: {experience}"
+            st.caption(sub_info)
         with col2:
-            score = card.get("fit_score", card.get("score"))
+            score = card.get("fitScore") if card.get("fitScore") is not None else card.get("fit_score", data.get("fitScore", data.get("fit_score")))
             if score is not None:
                 try:
                     score_val = float(score)
@@ -22,11 +35,15 @@ def render_candidate_card(card: Dict[str, Any]):
                 except (ValueError, TypeError):
                     st.metric(label="Fit Score", value=str(score))
 
-        skills = card.get("skills", [])
+        skills = data.get("skills") or card.get("skills", [])
         if isinstance(skills, list) and skills:
             st.markdown(f"**Skills:** `{', '.join(skills[:6])}`")
 
-        summary = card.get("summary") or card.get("match_rationale")
+        strengths = card.get("strengths") or data.get("strengths", [])
+        if isinstance(strengths, list) and strengths:
+            st.caption(f"✅ **Strengths:** {', '.join(strengths)}")
+
+        summary = card.get("summary") or card.get("match_rationale") or data.get("summary")
         if summary:
             st.write(f"*{summary}*")
 

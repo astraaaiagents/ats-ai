@@ -38,6 +38,7 @@ async def compute_fit_scores(
     recruiter_id: str,
     job_id: str | None = None,
     job_requirements: dict[str, Any] | None = None,
+    query: str | None = None,
 ) -> list[dict[str, Any]]:
     """Compute fit scores for candidates using recruiter preferences.
 
@@ -55,6 +56,7 @@ async def compute_fit_scores(
         recruiter_id: Recruiter ID for preference loading.
         job_id: Optional job requisition ID for context.
         job_requirements: Optional job requirement dict. If None, fetched from job_id.
+        query: Optional natural language search query to infer requirements if missing.
 
     Returns:
         List of ranked candidate dicts with added keys:
@@ -84,7 +86,12 @@ async def compute_fit_scores(
         from .sourcing_agent import get_job_details
         job_requirements = await get_job_details(db, "", job_id) or {}
 
-    job_requirements = job_requirements or {}
+    job_requirements = dict(job_requirements or {})
+    if not job_requirements.get("required_skills") and query:
+        from .sourcing_agent import _extract_keywords
+        extracted = _extract_keywords(query)
+        if extracted:
+            job_requirements["required_skills"] = extracted
 
     # Step 3: Score each candidate
     scored = []

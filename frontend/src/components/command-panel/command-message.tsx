@@ -102,24 +102,26 @@ export function CommandMessage({ message, onAction }: CommandMessageProps) {
           {message.cards && message.cards.length > 0 && (
             <div className="mt-3 flex flex-col gap-2">
               {message.cards.map((card, i) => {
-                if (card.type === "candidate") {
-                  const data = card.data as CandidateCardData | undefined;
+                const cardType = card.type || (card as any).data?.type || "candidate";
+                if (cardType === "candidate") {
+                  const data = (card.data || card) as CandidateCardData | undefined;
+                  const fitScore = card.fitScore ?? (card as any).fit_score ?? 0;
                   return (
-                    <div key={i} className="rounded-md border border-border bg-surface p-3 text-xs">
+                    <div key={i} className="rounded-md border border-border bg-surface p-3 text-xs shadow-sm">
                       <div className="font-semibold text-text-primary">
                         {data?.first_name} {data?.last_name}
                       </div>
                       <div className="text-text-secondary">{data?.current_title}</div>
                       <div className="mt-1 flex items-center justify-between text-[10px]">
                         <span className="text-text-tertiary">Fit Score:</span>
-                        <span className="font-medium text-success">{Math.round((card.fitScore || 0) * 100)}%</span>
+                        <span className="font-medium text-success">{Math.round(fitScore * 100)}%</span>
                       </div>
                     </div>
                   );
-                } else if (card.type === "outreach") {
-                  const data = card.data as OutreachCardData | undefined;
+                } else if (cardType === "outreach") {
+                  const data = (card.data || card) as OutreachCardData | undefined;
                   return (
-                    <div key={i} className="rounded-md border border-border bg-surface p-3 text-xs">
+                    <div key={i} className="rounded-md border border-border bg-surface p-3 text-xs shadow-sm">
                       <div className="font-semibold text-text-primary">Draft: {data?.subject}</div>
                       <div className="mt-1 text-text-secondary line-clamp-3">{data?.body}</div>
                     </div>

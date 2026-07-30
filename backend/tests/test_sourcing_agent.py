@@ -51,6 +51,19 @@ class TestKeywordExtraction:
         assert keywords.index("python") < keywords.index("java")
         assert keywords.index("java") < keywords.index("golang")
 
+    def test_filters_sourcing_boilerplate(self) -> None:
+        keywords = _extract_keywords("Source top candidates for Senior Java Backend Engineer requiring Java, Spring Boot, AWS")
+        assert "source" not in keywords
+        assert "candidates" not in keywords
+        assert "requiring" not in keywords
+        assert "senior" in keywords
+        assert "java" in keywords
+        assert "backend" in keywords
+        assert "engineer" in keywords
+        assert "spring" in keywords
+        assert "boot" in keywords
+        assert "aws" in keywords
+
 
 class TestRRFFusion:
     """Test Reciprocal Rank Fusion combining."""

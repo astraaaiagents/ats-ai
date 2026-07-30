@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     openai_base_url: str = ""
-    openai_model: str = "gpt-4o"
+    openai_model: str = "Qwen3.5-4B-MLX-4bit"
 
     s3_bucket: str = "ats-ai-uploads"
     s3_region: str = "us-east-1"

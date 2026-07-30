@@ -137,6 +137,15 @@ async def dev_token(db: AsyncSession = Depends(get_session)):
 
 @auth_router.post("/refresh", response_model=TokenResponse)
 async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_session)):
+    if settings.bypass_auth and body.refresh_token in ("dev-token", "mock-valid-refresh"):
+        from app.auth.dependencies import ensure_dev_user
+        dev_user = await ensure_dev_user(db)
+        token_data = _build_token_data(dev_user, "recruiter")
+        return TokenResponse(
+            access_token=create_access_token(token_data),
+            refresh_token=create_refresh_token(token_data),
+        )
+
     payload = verify_token(body.refresh_token, expected_type="refresh")
 
     jti = payload.get("jti")

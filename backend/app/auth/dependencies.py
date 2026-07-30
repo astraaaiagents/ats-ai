@@ -97,59 +97,52 @@ async def get_current_user(
     db: AsyncSession = Depends(get_session),
 ) -> User:
     if credentials and credentials.credentials and credentials.credentials != "dev-token":
-        try:
-            payload = verify_token(credentials.credentials, expected_type="access")
-            jti = payload.get("jti")
-            if jti:
-                blacklisted = await is_token_blacklisted(jti, db)
-                if blacklisted:
-                    raise AppException(
-                        code="TOKEN_REVOKED",
-                        message="Token has been revoked",
-                        status_code=401,
-                    )
-
-            user_id = payload.get("sub")
-            if not user_id:
-                raise AppException(
-                    code="UNAUTHORIZED",
-                    message="Invalid token payload",
-                    status_code=401,
-                )
-
-            result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
-            user = result.scalar_one_or_none()
-            if not user or not user.is_active:
-                raise AppException(
-                    code="UNAUTHORIZED",
-                    message="User not found or inactive",
-                    status_code=401,
-                )
-
-            if payload.get("token_version", 0) != user.token_version:
+        payload = verify_token(credentials.credentials, expected_type="access")
+        jti = payload.get("jti")
+        if jti:
+            blacklisted = await is_token_blacklisted(jti, db)
+            if blacklisted:
                 raise AppException(
                     code="TOKEN_REVOKED",
-                    message="Token has been invalidated",
+                    message="Token has been revoked",
                     status_code=401,
                 )
 
-            return user
-        except AppException:
-            raise
-        except Exception:
-            if not settings.bypass_auth:
-                raise AppException(
-                    code="UNAUTHORIZED",
-                    message="Could not validate credentials",
-                    status_code=401,
-                )
+        user_id = payload.get("sub")
+        if not user_id:
+            raise AppException(
+                code="UNAUTHORIZED",
+                message="Invalid token payload",
+                status_code=401,
+            )
 
-    # Fallback to dev user when auth is bypassed
-    if settings.bypass_auth:
+        result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+        user = result.scalar_one_or_none()
+        if not user or not user.is_active:
+            raise AppException(
+                code="UNAUTHORIZED",
+                message="User not found or inactive",
+                status_code=401,
+            )
+
+        if payload.get("token_version", 0) != user.token_version:
+            raise AppException(
+                code="TOKEN_REVOKED",
+                message="Token has been invalidated",
+                status_code=401,
+            )
+
+        return user
+
+    # Fallback to dev user when auth is bypassed or dev-token is provided
+    if settings.bypass_auth or (credentials and credentials.credentials == "dev-token"):
         return await ensure_dev_user(db)
 
-
-    return user
+    raise AppException(
+        code="UNAUTHORIZED",
+        message="Authentication required",
+        status_code=401,
+    )
 
 
 def require_role(roles: list[str]):

@@ -42,6 +42,8 @@ class TestRuleBasedClassification:
             ("Draft outreach to Maria", INTENT_DRAFT_OUTREACH),
             ("Write an email to the candidates", INTENT_DRAFT_OUTREACH),
             ("Reach out to the top matches", INTENT_DRAFT_OUTREACH),
+            ("Source top candidates for Senior Java Backend Engineer requiring Java, Spring Boot, AWS", INTENT_SOURCE_CANDIDATES),
+            ("Active Session: New Conversation\n\nSource top candidates for Senior Java Backend Engineer requiring Java, Spring Boot, AWS", INTENT_SOURCE_CANDIDATES),
             ("Hello, how are you?", INTENT_GENERAL_CONVERSATION),
             ("What can you do?", INTENT_GENERAL_CONVERSATION),
         ],

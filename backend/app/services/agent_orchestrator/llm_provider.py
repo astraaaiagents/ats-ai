@@ -68,7 +68,7 @@ class OpenAILLMProvider(LLMProvider):
         if self._client is None:
             from openai import AsyncOpenAI
 
-            kwargs: dict[str, Any] = {"api_key": self._api_key}
+            kwargs: dict[str, Any] = {"api_key": self._api_key, "timeout": 120.0}
             if self._base_url:
                 kwargs["base_url"] = self._base_url
             self._client = AsyncOpenAI(**kwargs)
@@ -87,16 +87,24 @@ class OpenAILLMProvider(LLMProvider):
         return response.choices[0].message.content or ""
 
     async def classify(self, prompt: str, system_prompt: str) -> str:
+        import asyncio
         client = self._get_client()
-        response = await client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.1,
-        )
-        return (response.choices[0].message.content or "").strip()
+        try:
+            response = await asyncio.wait_for(
+                client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.1,
+                ),
+                timeout=5.0,
+            )
+            return (response.choices[0].message.content or "").strip()
+        except Exception as exc:
+            logger.warning(f"LLM classify call failed or timed out ({exc})")
+            raise
 
 
 class MockLLMProvider(LLMProvider):

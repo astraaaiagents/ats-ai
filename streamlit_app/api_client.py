@@ -86,7 +86,7 @@ class APIClient:
                 url,
                 json=payload,
                 headers=self.headers,
-                timeout=30.0,
+                timeout=httpx.Timeout(180.0, connect=10.0, read=180.0),
             ) as response:
                 current_event = "message"
                 for line in response.iter_lines():
