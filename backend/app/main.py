@@ -27,8 +27,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         async with async_session_factory() as db:
-            from app.auth.dependencies import ensure_dev_user
+            from app.auth.dependencies import ensure_dev_user, ensure_seed_candidates
             await ensure_dev_user(db)
+            await ensure_seed_candidates(db)
     except Exception as e:
         import sys
         print(f"Startup DB setup notice: {e}", file=sys.stderr, flush=True)
