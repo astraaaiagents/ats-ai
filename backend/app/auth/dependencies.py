@@ -32,8 +32,18 @@ async def ensure_dev_user(db: AsyncSession) -> User:
     """
     try:
         from app.models.organization import Organization
-        org_result = await db.execute(select(Organization.id).limit(1))
-        default_org_id = org_result.scalar_one_or_none() or _DEV_ORG_ID
+        org_result = await db.execute(select(Organization).where(Organization.id == _DEV_ORG_ID))
+        dev_org = org_result.scalar_one_or_none()
+        if not dev_org:
+            dev_org = Organization(
+                id=_DEV_ORG_ID,
+                name="Default Organization",
+                slug="default-org",
+                is_active=True,
+            )
+            db.add(dev_org)
+            await db.flush()
+        default_org_id = _DEV_ORG_ID
 
         result = await db.execute(
             select(User).where(User.id == _DEV_USER_ID)

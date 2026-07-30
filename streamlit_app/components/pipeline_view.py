@@ -61,7 +61,7 @@ def render_pipeline_view(client: APIClient):
                         for sk in skills_input.split(","):
                             sk_str = sk.strip()
                             if sk_str:
-                                skills_list.append({"skill_name": sk_str, "proficiency": "intermediate"})
+                                skills_list.append({"skill_name": sk_str, "proficiency": 3})
 
                     payload = {
                         "first_name": first_name.strip(),

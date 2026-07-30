@@ -149,6 +149,54 @@ class TestCandidateEndpoints:
         assert body["status"] == "sourced"
 
     @pytest.mark.anyio
+    async def test_create_candidate_with_string_proficiency_and_extra_fields(self):
+        org_id = str(uuid.uuid4())
+        current_user = _make_current_user("recruiter", org_id)
+        token = _make_user_token(org_id, "recruiter", user_id=current_user.id)
+        candidate_uuid = uuid.uuid4()
+
+        mock_dup_result = Mock()
+        mock_dup_result.scalar_one_or_none.return_value = None
+        mock_dup_result.scalars.return_value.all.return_value = []
+
+        mock_session = _make_session_with_user(current_user, [mock_dup_result])
+
+        async def refresh_side_effect(obj):
+            obj.id = candidate_uuid
+            obj.first_name = "Jane"
+            obj.last_name = "Smith"
+            obj.email = "jane.smith@example.com"
+            obj.status = "sourced"
+            obj.created_at = datetime(2025, 1, 1, tzinfo=UTC)
+            obj.updated_at = datetime(2025, 1, 1, tzinfo=UTC)
+
+        mock_session.refresh = AsyncMock(side_effect=refresh_side_effect)
+
+        app = create_app()
+        app.dependency_overrides[get_session] = lambda: mock_session
+        transport = ASGITransport(app=app)
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/candidates",
+                json={
+                    "first_name": "Jane",
+                    "last_name": "Smith",
+                    "email": "jane.smith@example.com",
+                    "current_title": "Product Manager",
+                    "status": "sourced",
+                    "ai_summary": "Strong product candidate",
+                    "skills": [{"skill_name": "Product Strategy", "proficiency": "intermediate"}],
+                },
+                headers={"Authorization": f"Bearer {token}"},
+            )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["first_name"] == "Jane"
+        assert body["email"] == "jane.smith@example.com"
+
+    @pytest.mark.anyio
     async def test_create_candidate_duplicate_email_returns_409(self):
         org_id = str(uuid.uuid4())
         current_user = _make_current_user("recruiter", org_id)

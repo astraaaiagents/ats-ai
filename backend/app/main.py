@@ -20,15 +20,18 @@ from app.routes.users import users_router
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    # Ensure dev user exists in DB when auth is bypassed
-    if settings.bypass_auth:
-        try:
-            async with async_session_factory() as db:
-                from app.auth.dependencies import ensure_dev_user
-                await ensure_dev_user(db)
-        except Exception:
-            # Silently skip if DB is unavailable (e.g. tests)
-            pass
+    # Auto-create tables and dev user if DB tables don't exist
+    try:
+        import app.models  # noqa: F401
+        from app.database import engine, Base, async_session_factory
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        async with async_session_factory() as db:
+            from app.auth.dependencies import ensure_dev_user
+            await ensure_dev_user(db)
+    except Exception as e:
+        import sys
+        print(f"Startup DB setup notice: {e}", file=sys.stderr, flush=True)
 
     # Start the proactive monitor (sourcing pulse scheduler)
     from app.services.proactive_monitor import start_monitor

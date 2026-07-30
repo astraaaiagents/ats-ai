@@ -8,9 +8,9 @@ from sqlalchemy import (
     ForeignKey,
     String,
     UniqueConstraint,
+    Uuid as UUID,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base

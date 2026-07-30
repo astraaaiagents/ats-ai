@@ -1,10 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class CandidateSkillInput(BaseModel):
     skill_name: str
-    proficiency: int | None = None
+    proficiency: int | str | None = None
     years_experience: float | None = None
+
+    @field_validator("proficiency", mode="before")
+    @classmethod
+    def parse_proficiency(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            if v.isdigit():
+                return int(v)
+            mapping = {"beginner": 1, "junior": 2, "intermediate": 3, "advanced": 4, "expert": 5}
+            return mapping.get(v.lower(), 3)
+        return v
 
 
 class CandidateSkillResponse(BaseModel):
@@ -50,6 +62,8 @@ class CandidateCreate(BaseModel):
     visa_status: str | None = None
     notice_period_days: int | None = None
     source: str | None = None
+    status: str | None = None
+    ai_summary: str | None = None
     skills: list[CandidateSkillInput] = []
 
 
