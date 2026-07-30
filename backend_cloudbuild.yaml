@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'us-central1-docker.pkg.dev/project-fd57960c-bd1d-4bf4-bf9/ats-ai/backend:latest', '-f', 'backend/Dockerfile', 'backend' ]
+images:
+- 'us-central1-docker.pkg.dev/project-fd57960c-bd1d-4bf4-bf9/ats-ai/backend:latest'
