@@ -303,7 +303,7 @@ async def _vector_search(
                 candidate_scores[cid_str] = max(candidate_scores.get(cid_str, 0.0), float(sim))
 
             if candidate_scores:
-                candidate_ids = list(candidate_scores.keys())[:limit]
+                candidate_ids = [_ensure_uuid(cid) for cid in list(candidate_scores.keys())[:limit]]
                 result = await db.execute(
                     select(Candidate).where(
                         Candidate.organization_id == org_id,
@@ -339,7 +339,7 @@ async def _vector_search(
         return []
 
     # Fetch full candidate records
-    candidate_ids = list(candidate_scores.keys())[:limit]
+    candidate_ids = [_ensure_uuid(cid) for cid in list(candidate_scores.keys())[:limit]]
     result = await db.execute(
         select(Candidate).where(
             Candidate.organization_id == org_id,
