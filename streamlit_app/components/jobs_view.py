@@ -91,7 +91,7 @@ def render_jobs_view(client: APIClient):
                 if st.button("🔎 Source Candidates", key=f"source_job_{job['id']}", type="primary", use_container_width=True):
                     prompt = f"Source top candidates for {job['title']} requiring {', '.join(job['skills'][:3])}"
                     st.session_state["pending_prompt"] = prompt
+                    st.session_state["switch_tab"] = "💬 Conversations"
                     st.session_state["active_tab"] = "💬 Conversations"
-                    st.session_state["nav_segmented_control"] = "💬 Conversations"
                     st.session_state["view_mode"] = "chat"
                     st.rerun()

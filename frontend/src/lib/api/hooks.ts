@@ -25,6 +25,8 @@ import type {
   ProactiveAlertsResponse,
   ActionLogEntry,
   CandidateResponse,
+  CandidateCreateRequest,
+  ClientContactCreateRequest,
   PaginatedResponse,
   SSEEvent,
 } from "./types";
@@ -251,5 +253,33 @@ export function useClientContacts(opts?: {
       );
     },
     staleTime: 120_000,
+  });
+}
+
+/* ── Create Candidate ──────────────────────────────────────────────── */
+
+export function useCreateCandidate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CandidateCreateRequest) =>
+      api.post<CandidateResponse>("/candidates", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.candidates });
+    },
+  });
+}
+
+/* ── Create Client Contact (Job) ───────────────────────────────────── */
+
+export function useCreateClientContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ClientContactCreateRequest) =>
+      api.post<ClientContactCreateRequest>("/client-contacts", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clientContacts });
+    },
   });
 }

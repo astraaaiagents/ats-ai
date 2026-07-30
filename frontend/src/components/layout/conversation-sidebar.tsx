@@ -28,8 +28,16 @@ const SECTIONS = [
 type SectionKey = (typeof SECTIONS)[number]["key"];
 
 export function MainSidebar() {
-  const { activeTab, setActiveTab, isSidebarOpen, conversations, activeConversationId } = useConversations();
-  const { createConversation, selectConversation } = useConversationManager();
+  const {
+    activeTab,
+    setActiveTab,
+    isSidebarOpen,
+    isConversationsExpanded,
+    toggleConversationsExpanded,
+    conversations,
+    activeConversationId,
+  } = useConversations();
+  const { createConversation, selectConversation, removeConversation } = useConversationManager();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filtered = searchQuery
@@ -42,14 +50,16 @@ export function MainSidebar() {
   if (!isSidebarOpen) return null;
 
   const isSectionActive = (sectionKey: SectionKey) => {
-    if (sectionKey === "conversations") return activeConversationId !== null;
-    return activeTab === sectionKey;
+    if (sectionKey === "conversations") {
+      return activeTab === "conversations" || activeConversationId !== null;
+    }
+    return activeTab === sectionKey && activeConversationId === null;
   };
 
   const handleSectionClick = (sectionKey: SectionKey) => {
     if (sectionKey === "conversations") {
-      setActiveTab("feed");
-      selectConversation(null);
+      setActiveTab("conversations");
+      toggleConversationsExpanded();
     } else {
       setActiveTab(sectionKey as ActiveTab);
       selectConversation(null);
@@ -60,7 +70,7 @@ export function MainSidebar() {
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-surface">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-4 py-3.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-400 text-sm font-bold text-white">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-400 text-sm font-bold text-white shadow-sm">
           A
         </div>
         <span className="text-base font-semibold text-text-primary">
@@ -70,7 +80,7 @@ export function MainSidebar() {
 
       {/* New Conversation Button */}
       <button
-        className="mx-3 mb-2 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+        className="mx-3 mb-2 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-[0.99]"
         onClick={() => {
           const conv = createConversation();
           selectConversation(conv.id);
@@ -106,21 +116,41 @@ export function MainSidebar() {
         <div className="mb-2">
           <button
             className={cn(
-              "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
-              isSectionActive("conversations") ? "bg-primary/10 text-text-primary" : "text-text-secondary hover:bg-surface-hover"
+              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors",
+              isSectionActive("conversations") ? "bg-primary/10 text-text-primary font-medium" : "text-text-secondary hover:bg-surface-hover"
             )}
             onClick={() => handleSectionClick("conversations")}
+            aria-expanded={isConversationsExpanded}
+            aria-label="Toggle conversations list"
           >
-            <span className="text-sm">{SECTIONS[0].icon}</span>
-            <span className="text-xs font-semibold">{SECTIONS[0].label}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{SECTIONS[0].icon}</span>
+              <span className="text-xs font-semibold">{SECTIONS[0].label}</span>
+              {conversations.length > 0 && (
+                <span className="rounded-full bg-primary/15 px-1.5 py-0.2 text-[10px] font-medium text-primary">
+                  {conversations.length}
+                </span>
+              )}
+            </div>
+            <svg
+              className={cn("h-3.5 w-3.5 text-text-tertiary transition-transform duration-200", isConversationsExpanded && "rotate-180")}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
 
-          {/* Conversation List (only shown when Conversations section is active) */}
-          {isSectionActive("conversations") && (
-            <div className="mt-1 ml-6 space-y-0.5">
+          {/* Conversation List (shown when expanded) */}
+          {isConversationsExpanded && (
+            <div className="mt-1 ml-3 space-y-0.5 border-l-2 border-border/40 pl-2 transition-all">
               {filtered.length === 0 ? (
-                <div className="px-3 py-2 text-center text-[10px] text-text-tertiary">
-                  {searchQuery ? "No conversations found" : "No conversations yet"}
+                <div className="px-3 py-3 text-center text-[11px] text-text-tertiary">
+                  {searchQuery ? "No matching conversations" : "No conversations yet"}
                 </div>
               ) : (
                 filtered.map((conv) => (
@@ -129,6 +159,7 @@ export function MainSidebar() {
                     conversation={conv}
                     isActive={conv.id === activeConversationId}
                     onClick={() => selectConversation(conv.id)}
+                    onDelete={() => removeConversation(conv.id)}
                   />
                 ))
               )}
@@ -141,7 +172,7 @@ export function MainSidebar() {
           <button
             className={cn(
               "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
-              isSectionActive("feed") ? "bg-primary/10 text-text-primary" : "text-text-secondary hover:bg-surface-hover"
+              isSectionActive("feed") ? "bg-primary/10 text-text-primary font-medium" : "text-text-secondary hover:bg-surface-hover"
             )}
             onClick={() => handleSectionClick("feed")}
           >
@@ -155,7 +186,7 @@ export function MainSidebar() {
           <button
             className={cn(
               "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
-              isSectionActive("pipeline") ? "bg-primary/10 text-text-primary" : "text-text-secondary hover:bg-surface-hover"
+              isSectionActive("pipeline") ? "bg-primary/10 text-text-primary font-medium" : "text-text-secondary hover:bg-surface-hover"
             )}
             onClick={() => handleSectionClick("pipeline")}
           >
@@ -169,7 +200,7 @@ export function MainSidebar() {
           <button
             className={cn(
               "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
-              isSectionActive("jobs") ? "bg-primary/10 text-text-primary" : "text-text-secondary hover:bg-surface-hover"
+              isSectionActive("jobs") ? "bg-primary/10 text-text-primary font-medium" : "text-text-secondary hover:bg-surface-hover"
             )}
             onClick={() => handleSectionClick("jobs")}
           >
@@ -183,7 +214,7 @@ export function MainSidebar() {
           <button
             className={cn(
               "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
-              isSectionActive("preferences") ? "bg-primary/10 text-text-primary" : "text-text-secondary hover:bg-surface-hover"
+              isSectionActive("preferences") ? "bg-primary/10 text-text-primary font-medium" : "text-text-secondary hover:bg-surface-hover"
             )}
             onClick={() => handleSectionClick("preferences")}
           >

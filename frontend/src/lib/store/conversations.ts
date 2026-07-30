@@ -6,7 +6,7 @@
 
 import { create } from "zustand";
 
-export type ActiveTab = "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
+export type ActiveTab = "conversations" | "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
 
 export interface StoredConversation {
   id: string;
@@ -22,6 +22,7 @@ interface ConversationsState {
   activeConversationId: string | null;
   activeTab: ActiveTab;
   isSidebarOpen: boolean;
+  isConversationsExpanded: boolean;
   setConversations: (conversations: StoredConversation[]) => void;
   addConversation: (conv: StoredConversation) => void;
   updateConversation: (id: string, updates: Partial<StoredConversation>) => void;
@@ -32,6 +33,8 @@ interface ConversationsState {
   toggleSidebar: () => void;
   closeSidebar: () => void;
   openSidebar: () => void;
+  toggleConversationsExpanded: () => void;
+  setConversationsExpanded: (expanded: boolean) => void;
 }
 
 const STORAGE_KEY = "ats_conversations";
@@ -60,6 +63,7 @@ export const useConversations = create<ConversationsState>((set, get) => ({
   activeConversationId: null,
   activeTab: "feed",
   isSidebarOpen: true,
+  isConversationsExpanded: true,
 
   setConversations: (conversations) => {
     set({ conversations });
@@ -70,7 +74,12 @@ export const useConversations = create<ConversationsState>((set, get) => ({
     set((state) => {
       const next = [conv, ...state.conversations].slice(0, 50);
       saveConversations(next);
-      return { conversations: next, activeConversationId: conv.id };
+      return {
+        conversations: next,
+        activeConversationId: conv.id,
+        isConversationsExpanded: true,
+        activeTab: "conversations",
+      };
     });
   },
 
@@ -96,7 +105,12 @@ export const useConversations = create<ConversationsState>((set, get) => ({
     });
   },
 
-  setActiveConversation: (id) => set({ activeConversationId: id }),
+  setActiveConversation: (id) =>
+    set((state) => ({
+      activeConversationId: id,
+      isConversationsExpanded: id !== null ? true : state.isConversationsExpanded,
+      activeTab: id !== null ? "conversations" : state.activeTab,
+    })),
 
   getActiveConversation: () => {
     const { conversations, activeConversationId } = get();
@@ -108,4 +122,8 @@ export const useConversations = create<ConversationsState>((set, get) => ({
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   closeSidebar: () => set({ isSidebarOpen: false }),
   openSidebar: () => set({ isSidebarOpen: true }),
+
+  toggleConversationsExpanded: () =>
+    set((state) => ({ isConversationsExpanded: !state.isConversationsExpanded })),
+  setConversationsExpanded: (expanded) => set({ isConversationsExpanded: expanded }),
 }));

@@ -7,9 +7,10 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
-type TabKey = "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
+type TabKey = "conversations" | "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
 
 const TABS: { key: TabKey; label: string; path: string }[] = [
+  { key: "conversations", label: "Conversations", path: "/?tab=conversations" },
   { key: "feed", label: "Feed", path: "/feed" },
   { key: "pipeline", label: "Pipeline", path: "/pipeline" },
   { key: "jobs", label: "Jobs", path: "/jobs" },

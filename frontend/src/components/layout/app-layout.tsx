@@ -45,7 +45,9 @@ export function AppLayout({ defaultTab = "feed" }: AppLayoutProps) {
         {/* Toggle Button */}
         <button
           onClick={toggleSidebar}
-          className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white shadow-md transition-colors hover:bg-gray-50"
+          className={`absolute top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-md transition-all hover:bg-gray-50 focus:outline-none ${
+            isSidebarOpen ? "left-0 -translate-x-1/2" : "left-2"
+          }`}
           aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           {isSidebarOpen ? (

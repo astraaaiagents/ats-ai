@@ -48,7 +48,7 @@ def _format_client_contact_response(c) -> ClientContactResponse:
 async def list_client_contacts(
     pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(require_role(["admin", "manager"])),
+    current_user=Depends(require_role(["admin", "manager", "recruiter"])),
 ):
     """List client contacts with pagination."""
     org_id = getattr(current_user, "organization_id", None)

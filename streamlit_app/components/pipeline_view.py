@@ -56,6 +56,7 @@ def render_pipeline_view(client: APIClient):
         company = cand.get("current_employer", "")
         clocation = cand.get("location", "")
         cstatus = str(cand.get("status", "sourced"))
+        cskills = cand.get("skills", [])
 
         sub_info = " | ".join(filter(None, [ctitle, company, clocation]))
 
@@ -66,8 +67,19 @@ def render_pipeline_view(client: APIClient):
                 if sub_info:
                     st.markdown(f"💼 *{sub_info}*")
                 st.caption(f"📧 {cemail}")
+                if cskills:
+                    st.markdown(f"**Skills:** `{', '.join(cskills[:4])}`")
             with cols[1]:
                 st.markdown(f"**Status:** `{cstatus.upper()}`")
+                if st.button("💼 Search Related Jobs", key=f"btn_jobs_{cid}", type="secondary", use_container_width=True):
+                    skills_str = f" with skills: {', '.join(cskills[:3])}" if cskills else ""
+                    prompt = f"Search active job requisitions and match suitable open roles for candidate {cname} ({ctitle}){skills_str}"
+                    st.session_state["pending_prompt"] = prompt
+                    st.session_state["switch_tab"] = "💬 Conversations"
+                    st.session_state["active_tab"] = "💬 Conversations"
+                    st.session_state["view_mode"] = "chat"
+                    st.rerun()
+
             with cols[2]:
                 current_idx = PIPELINE_STAGES.index(cstatus.lower()) if cstatus.lower() in PIPELINE_STAGES else 0
                 new_status = st.selectbox(

@@ -32,13 +32,21 @@ TABS = [
 
 def main():
     client = APIClient()
-    render_sidebar(client)
+
+    # Process programmatic tab switch request BEFORE rendering the segmented control widget
+    if "switch_tab" in st.session_state:
+        target_tab = st.session_state.pop("switch_tab")
+        if target_tab in TABS:
+            st.session_state["active_tab"] = target_tab
+            st.session_state["nav_segmented_control"] = target_tab
 
     if "active_tab" not in st.session_state or st.session_state["active_tab"] not in TABS:
         st.session_state["active_tab"] = "💬 Conversations"
 
     if "nav_segmented_control" not in st.session_state:
         st.session_state["nav_segmented_control"] = st.session_state["active_tab"]
+
+    render_sidebar(client)
 
     # Top-level Portal Tab Navigation
     selected_tab = st.segmented_control(

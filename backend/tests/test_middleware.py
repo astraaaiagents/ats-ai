@@ -212,7 +212,7 @@ class TestPagination:
             return {"limit": params.limit}
 
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            r = await client.get("/test/paginate-clamp?limit=200")
+            r = await client.get("/test/paginate-clamp?limit=500")
             assert r.status_code == 422
 
 

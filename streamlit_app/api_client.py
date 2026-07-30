@@ -61,6 +61,16 @@ class APIClient:
             logger.error(f"Error fetching conversation {session_id}: {exc}")
             return []
 
+    def delete_conversation(self, session_id: str) -> bool:
+        """Delete a conversation session."""
+        try:
+            url = f"{self.base_url}/agent/conversation/{session_id}"
+            resp = httpx.delete(url, headers=self.headers, timeout=10.0)
+            return resp.status_code == 200
+        except Exception as exc:
+            logger.error(f"Error deleting conversation {session_id}: {exc}")
+            return False
+
     def stream_conversation(
         self,
         message: str,

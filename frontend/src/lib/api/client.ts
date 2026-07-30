@@ -104,8 +104,8 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
     }
   }
 
-  if (!skipAuth && token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (!skipAuth) {
+    headers["Authorization"] = token ? `Bearer ${token}` : "Bearer dev-token";
   }
 
   let response = await fetch(`${API_BASE}${path}`, {

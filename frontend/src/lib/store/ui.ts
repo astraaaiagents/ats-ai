@@ -6,7 +6,7 @@
 
 import { create } from "zustand";
 
-export type ActiveTab = "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
+export type ActiveTab = "conversations" | "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
 
 export type CommandPanelMode = "compact" | "expanded" | "compare" | "closed";
 

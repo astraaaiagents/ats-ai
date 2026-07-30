@@ -17,7 +17,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
@@ -340,6 +340,67 @@ async def get_conversation(
         title=session.title,
         messages=[agent_service._message_to_response(m) for m in messages],
     )
+
+
+# --- DELETE /conversation/{session_id} ---
+
+
+@agent_router.delete(
+    "/conversation/{session_id}",
+    response_model=dict,
+    responses={404: {"model": ErrorResponse}},
+)
+async def delete_conversation(
+    session_id: str,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a conversation session and all its messages."""
+    try:
+        target_uuid = UUID(session_id)
+    except ValueError:
+        raise AppException(
+            code="INVALID_INPUT",
+            message="Invalid UUID format for session_id",
+            status_code=400,
+        )
+
+    # 1. Lookup session
+    result = await db.execute(
+        select(AgentConversationSession).where(
+            AgentConversationSession.id == target_uuid,
+        )
+    )
+    session = result.scalar_one_or_none()
+
+    # 2. Fallback lookup if action log ID passed
+    if not session:
+        action_res = await db.execute(
+            select(AgentAction).where(AgentAction.id == target_uuid)
+        )
+        action = action_res.scalar_one_or_none()
+        if action and action.session_id:
+            target_uuid = action.session_id
+            result = await db.execute(
+                select(AgentConversationSession).where(
+                    AgentConversationSession.id == target_uuid,
+                )
+            )
+            session = result.scalar_one_or_none()
+
+    if not session:
+        raise AppException(
+            code="NOT_FOUND",
+            message="Conversation session not found",
+            status_code=404,
+        )
+
+    # Delete messages and session
+    await db.execute(delete(AgentConversationMessage).where(AgentConversationMessage.session_id == target_uuid))
+    await db.execute(delete(AgentConversationSession).where(AgentConversationSession.id == target_uuid))
+    await db.commit()
+
+    return {"message": "Conversation deleted successfully", "session_id": str(target_uuid)}
 
 
 # --- GET /preferences ---

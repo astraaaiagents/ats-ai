@@ -18,7 +18,7 @@ function HomeContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
   const tabParam = searchParams.get("tab") as ActiveTab | null;
-  const validTabs: ActiveTab[] = ["feed", "pipeline", "jobs", "preferences", "analytics"];
+  const validTabs: ActiveTab[] = ["conversations", "feed", "pipeline", "jobs", "preferences", "analytics"];
   const defaultTab: ActiveTab = tabParam && validTabs.includes(tabParam) ? tabParam : "feed";
 
   useEffect(() => {

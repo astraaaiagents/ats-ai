@@ -28,6 +28,28 @@ export interface UserResponse {
 
 /* ── Candidate ────────────────────────────────────────────────────── */
 
+export interface CandidateSkillInput {
+  skill_name: string;
+  proficiency?: number | null;
+  years_experience?: number | null;
+}
+
+export interface CandidateCreateRequest {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string | null;
+  current_title?: string | null;
+  current_employer?: string | null;
+  location?: string | null;
+  salary_expectation_min?: number | null;
+  salary_expectation_max?: number | null;
+  visa_status?: string | null;
+  notice_period_days?: number | null;
+  source?: string | null;
+  skills?: CandidateSkillInput[];
+}
+
 export interface CandidateSkillResponse {
   id: string;
   skill_name: string;
@@ -238,6 +260,20 @@ export interface Job {
   candidate_count: number;
   pipeline_summary: string;
   agent_insight: string;
+}
+
+/* ── Client Contact (Job) Create Request ──────────────────────────── */
+
+export interface ClientContactCreateRequest {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string | null;
+  organization_name?: string | null;
+  title?: string | null;
+  location?: string | null;
+  description?: string | null;
+  status?: string | null;
 }
 
 /* ── Error ────────────────────────────────────────────────────────── */

@@ -11,7 +11,7 @@ import { useSearch } from "@/lib/store/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type TabKey = "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
+type TabKey = "conversations" | "feed" | "pipeline" | "jobs" | "preferences" | "analytics";
 
 interface TopNavProps {
   activeTab: TabKey;

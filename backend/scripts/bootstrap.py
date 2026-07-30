@@ -74,8 +74,50 @@ async def bootstrap() -> None:
             )
             logger.info("Created super_admin user (email=%s)", email)
             print(f"SuperAdmin created — email: {email}  password: {password}")
-        else:
-            logger.info("Super admin already exists (id=%s)", admin)
+        # Ensure dev user exists with default organization_id
+        dev_result = await session.execute(
+            text("SELECT id, organization_id FROM users WHERE id = '00000000-0000-0000-0000-000000000001'")
+        )
+        dev_row = dev_result.fetchone()
+        if dev_row is None:
+            now = datetime.now(tz=timezone.utc)
+            dev_pw_hash = hash_password("dev")
+            await session.execute(
+                text(
+                    "INSERT INTO users (id, email, password_hash, role, organization_id, is_active, token_version, created_at, updated_at) "
+                    "VALUES ('00000000-0000-0000-0000-000000000001', 'dev@localhost', :password_hash, 'recruiter', :org_id, true, 0, :now, :now)"
+                ),
+                {"password_hash": dev_pw_hash, "org_id": org_id, "now": now},
+            )
+            logger.info("Created dev user (00000000-0000-0000-0000-000000000001)")
+        elif dev_row[1] != org_id:
+            await session.execute(
+                text("UPDATE users SET organization_id = :org_id WHERE id = '00000000-0000-0000-0000-000000000001'"),
+                {"org_id": org_id},
+            )
+            logger.info("Updated dev user organization_id to %s", org_id)
+
+        # Sync proactive alerts for dev user
+        await session.execute(
+            text("""
+                INSERT INTO agent_proactive_alerts (id, recruiter_id, alert_type, title, body, data, is_read, created_at)
+                SELECT gen_random_uuid(), '00000000-0000-0000-0000-000000000001'::uuid, alert_type, title, body, data, is_read, created_at
+                FROM agent_proactive_alerts
+                WHERE recruiter_id != '00000000-0000-0000-0000-000000000001'::uuid
+                ON CONFLICT DO NOTHING;
+            """)
+        )
+
+        # Sync agent actions for dev user
+        await session.execute(
+            text("""
+                INSERT INTO agent_actions (id, recruiter_id, session_id, action_type, agent_name, input_pseudonymized, output_pseudonymized, created_at)
+                SELECT gen_random_uuid(), '00000000-0000-0000-0000-000000000001'::uuid, session_id, action_type, agent_name, input_pseudonymized, output_pseudonymized, created_at
+                FROM agent_actions
+                WHERE recruiter_id != '00000000-0000-0000-0000-000000000001'::uuid
+                ON CONFLICT DO NOTHING;
+            """)
+        )
 
         await session.commit()
 

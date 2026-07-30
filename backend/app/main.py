@@ -5,6 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.database import async_session_factory
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import close_redis_client
 from app.middleware.request_id import RequestIDMiddleware
@@ -19,6 +20,16 @@ from app.routes.users import users_router
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Ensure dev user exists in DB when auth is bypassed
+    if settings.bypass_auth:
+        try:
+            async with async_session_factory() as db:
+                from app.auth.dependencies import ensure_dev_user
+                await ensure_dev_user(db)
+        except Exception:
+            # Silently skip if DB is unavailable (e.g. tests)
+            pass
+
     # Start the proactive monitor (sourcing pulse scheduler)
     from app.services.proactive_monitor import start_monitor
     start_monitor()

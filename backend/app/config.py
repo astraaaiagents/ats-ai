@@ -6,7 +6,12 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
+
+    dev_mode: bool = False
+    bypass_auth: bool = False
+    app_url: str = "http://localhost:3000"
 
     app_name: str = "ATS AI API"
     debug: bool = False

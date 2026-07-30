@@ -48,11 +48,11 @@ def _render_sessions_list_view(client: APIClient):
         created = str(s.get("created_at", ""))[:16].replace("T", " ")
 
         with st.container(border=True):
-            col_info, col_btn = st.columns([4, 1])
+            col_info, col_open, col_del = st.columns([3, 1, 1])
             with col_info:
                 st.markdown(f"**💬 {title}**")
                 st.caption(f"🆔 `{sid[:8]}...` • 🕒 {created if created else 'Recent'}")
-            with col_btn:
+            with col_open:
                 if st.button("💬 Open Chat", key=f"list_open_{sid}", type="secondary", use_container_width=True):
                     st.session_state["session_id"] = sid
                     history = client.get_conversation_history(sid)
@@ -66,10 +66,20 @@ def _render_sessions_list_view(client: APIClient):
                     ] if history else []
                     st.session_state["view_mode"] = "chat"
                     st.rerun()
+            with col_del:
+                if st.button("🗑️ Delete", key=f"list_del_{sid}", type="secondary", use_container_width=True):
+                    client.delete_conversation(sid)
+                    if st.session_state.get("session_id") == sid:
+                        st.session_state["session_id"] = None
+                        st.session_state["messages"] = []
+                    st.success("Conversation deleted")
+                    st.rerun()
 
 def _render_active_chat_view(client: APIClient):
     """Render active chat view with SSE streaming and history."""
-    col_nav, col_new = st.columns([3, 1])
+    sid = st.session_state.get("session_id")
+
+    col_nav, col_new, col_del = st.columns([2, 1, 1])
     with col_nav:
         if st.button("⬅️ Back to Conversations List"):
             st.session_state["session_id"] = None
@@ -82,8 +92,15 @@ def _render_active_chat_view(client: APIClient):
             st.session_state["messages"] = []
             st.session_state["view_mode"] = "chat"
             st.rerun()
+    with col_del:
+        if sid:
+            if st.button("🗑️ Delete Session", key="active_del_btn", type="secondary", use_container_width=True):
+                client.delete_conversation(sid)
+                st.session_state["session_id"] = None
+                st.session_state["messages"] = []
+                st.session_state["view_mode"] = "list"
+                st.rerun()
 
-    sid = st.session_state.get("session_id")
     st.caption(f"Active Session: `{sid}`" if sid else "Active Session: New Conversation")
 
     if "messages" not in st.session_state:

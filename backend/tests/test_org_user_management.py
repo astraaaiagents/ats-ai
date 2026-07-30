@@ -844,8 +844,9 @@ class TestClientContactEndpoints:
         transport = ASGITransport(app=app)
 
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get(
+            response = await client.post(
                 "/api/v1/client-contacts",
+                json={"first_name": "Jane", "last_name": "Doe", "email": "jane@example.com"},
                 headers={"Authorization": f"Bearer {token}"},
             )
 

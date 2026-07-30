@@ -42,3 +42,13 @@ def test_get_proactive_alerts(mock_get):
     alerts = client.get_proactive_alerts()
     assert len(alerts) == 1
     assert alerts[0]["title"] == "High Fit Score"
+
+@patch("httpx.delete")
+def test_delete_conversation(mock_delete):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_delete.return_value = mock_resp
+
+    client = APIClient()
+    success = client.delete_conversation("dummy-sid")
+    assert success is True
