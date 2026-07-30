@@ -357,6 +357,41 @@ class TestCandidateStatusTransitions:
         assert response.json()["status"] == "in_review"
 
     @pytest.mark.anyio
+    async def test_transition_sourced_to_screening_alias(self):
+        """Screening alias normalizes to in_review and succeeds."""
+        org_id = str(uuid.uuid4())
+        current_user = _make_current_user("recruiter", org_id)
+        token = _make_user_token(org_id, "recruiter", user_id=current_user.id)
+        candidate_uuid = uuid.uuid4()
+
+        mock_candidate = _make_mock_candidate(candidate_uuid, status="sourced")
+        mock_candidate.organization_id = uuid.UUID(org_id)
+
+        mock_result = Mock()
+        mock_result.scalar_one_or_none.return_value = mock_candidate
+
+        mock_session = _make_session_with_user(current_user, [mock_result])
+
+        async def refresh_side_effect(obj):
+            obj.status = "in_review"
+
+        mock_session.refresh = AsyncMock(side_effect=refresh_side_effect)
+
+        app = create_app()
+        app.dependency_overrides[get_session] = lambda: mock_session
+        transport = ASGITransport(app=app)
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.patch(
+                f"/api/v1/candidates/{candidate_uuid}/status",
+                json={"status": "screening"},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "in_review"
+
+    @pytest.mark.anyio
     async def test_transition_sourced_to_submitted_denied_recruiter(self):
         """Recruiter cannot skip directly to submitted."""
         org_id = str(uuid.uuid4())

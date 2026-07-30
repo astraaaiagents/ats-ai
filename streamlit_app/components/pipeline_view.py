@@ -3,14 +3,12 @@ from streamlit_app.api_client import APIClient
 
 PIPELINE_STAGES = [
     "sourced",
-    "screening",
     "in_review",
     "submitted",
-    "interview",
     "interviewing",
-    "offer",
+    "shortlisted",
+    "offer_extended",
     "placed",
-    "hired",
     "rejected",
 ]
 
@@ -69,7 +67,7 @@ def render_pipeline_view(client: APIClient):
         ctitle = cand.get("current_title", "")
         company = cand.get("current_employer", "")
         clocation = cand.get("location", "")
-        cstatus = str(cand.get("status", "sourced"))
+        cstatus = str(cand.get("status", "sourced")).lower()
         skill_names = _extract_skill_names(cand.get("skills", []))
 
         sub_info = " | ".join(filter(None, [ctitle, company, clocation]))
@@ -97,18 +95,18 @@ def render_pipeline_view(client: APIClient):
                     st.rerun()
 
             with cols[2]:
-                current_idx = PIPELINE_STAGES.index(cstatus.lower()) if cstatus.lower() in PIPELINE_STAGES else 0
+                current_idx = PIPELINE_STAGES.index(cstatus) if cstatus in PIPELINE_STAGES else 0
                 new_status = st.selectbox(
                     "Move Stage",
                     options=PIPELINE_STAGES,
                     index=current_idx,
                     key=f"stage_select_{cid}",
                 )
-                if new_status.lower() != cstatus.lower():
+                if new_status.lower() != cstatus:
                     if st.button("Update Stage", key=f"btn_update_{cid}", type="secondary"):
                         success = client.update_candidate_status(cid, new_status.lower())
                         if success:
                             st.success(f"Updated {cname} status to {new_status}!")
                             st.rerun()
                         else:
-                            st.error("Failed to update status.")
+                            st.error("Failed to update status. Transition may not be allowed for your user role.")

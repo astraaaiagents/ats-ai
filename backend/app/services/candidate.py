@@ -180,10 +180,12 @@ async def change_candidate_status(
     reason: str | None = None,
 ) -> Candidate:
     """Change candidate status with state machine validation."""
-    from app.services.candidate_status import validate_transition
+    from app.services.candidate_status import validate_transition, normalize_status, get_allowed_transitions
 
-    if not validate_transition(candidate.status, new_status, user_role):
-        allowed = get_allowed_transitions_for_role(candidate.status, user_role)
+    target_status = normalize_status(new_status)
+
+    if not validate_transition(candidate.status, target_status, user_role):
+        allowed = get_allowed_transitions(candidate.status, user_role)
         raise AppException(
             code="INVALID_TRANSITION",
             message=f"Cannot transition from '{candidate.status}' to '{new_status}'. "
@@ -192,15 +194,15 @@ async def change_candidate_status(
         )
 
     old_status = candidate.status
-    candidate.status = new_status
+    candidate.status = target_status
 
     # Add timeline event
     timeline = CandidateTimeline(
         organization_id=candidate.organization_id,
         candidate_id=candidate.id,
         event_type="status_changed",
-        description=f"Status changed from '{old_status}' to '{new_status}'",
-        metadata={"from_status": old_status, "to_status": new_status, "reason": reason},
+        description=f"Status changed from '{old_status}' to '{target_status}'",
+        metadata={"from_status": old_status, "to_status": target_status, "reason": reason},
     )
     db.add(timeline)
 

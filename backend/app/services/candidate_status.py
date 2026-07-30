@@ -3,6 +3,18 @@
 Defines valid status transitions and role-based restrictions.
 """
 
+STATUS_ALIASES: dict[str, str] = {
+    "screening": "in_review",
+    "interview": "interviewing",
+    "offer": "offer_extended",
+    "hired": "placed",
+}
+
+def normalize_status(status: str) -> str:
+    """Normalize status aliases to canonical state machine statuses."""
+    s = str(status or "").strip().lower()
+    return STATUS_ALIASES.get(s, s)
+
 # Valid transitions: from_status -> [allowed to_statuses]
 TRANSITIONS: dict[str, list[str]] = {
     "sourced": ["in_review", "rejected"],
@@ -58,14 +70,14 @@ def validate_transition(from_status: str, to_status: str, user_role: str = "recr
 
     Returns:
         True if the transition is allowed
-
-    Raises:
-        ValueError: If from_status or to_status is invalid
     """
+    from_status = normalize_status(from_status)
+    to_status = normalize_status(to_status)
+
     if from_status not in TRANSITIONS:
-        raise ValueError(f"Invalid from_status: {from_status}")
+        return False
     if to_status not in TRANSITIONS and to_status not in {"archived"}:
-        raise ValueError(f"Invalid to_status: {to_status}")
+        return False
 
     # Terminal states cannot transition anywhere
     if from_status in ("placed", "rejected", "archived"):
@@ -92,6 +104,7 @@ def get_allowed_transitions(status: str, user_role: str = "recruiter") -> list[s
     Returns:
         List of allowed target statuses
     """
+    status = normalize_status(status)
     if status not in TRANSITIONS:
         return []
 
