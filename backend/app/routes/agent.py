@@ -93,6 +93,13 @@ async def conversation_stream(
         content=body.message,
     )
     db.add(user_msg)
+
+    # Auto-update session title if it's new
+    if not session.title or session.title == "New conversation":
+        clean_msg = body.message.strip()
+        session.title = (clean_msg[:35] + "...") if len(clean_msg) > 35 else clean_msg
+        db.add(session)
+
     await db.flush()
 
     # Step 3: Log action
@@ -243,17 +250,34 @@ async def list_sessions(
         .limit(limit)
     )
     sessions = result.scalars().all()
-    return {
-        "data": [
-            {
-                "id": str(s.id),
-                "title": s.title or f"Conversation {str(s.id)[:8]}",
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
-            }
-            for s in sessions
-        ]
-    }
+    out = []
+    for s in sessions:
+        title = s.title
+        if not title or title == "New conversation":
+            msg_res = await db.execute(
+                select(AgentConversationMessage)
+                .where(
+                    AgentConversationMessage.session_id == s.id,
+                    AgentConversationMessage.role == "user",
+                )
+                .order_by(AgentConversationMessage.created_at.asc())
+                .limit(1)
+            )
+            first_msg = msg_res.scalar_one_or_none()
+            if first_msg and first_msg.content:
+                clean = first_msg.content.strip()
+                title = (clean[:35] + "...") if len(clean) > 35 else clean
+                s.title = title
+                db.add(s)
+
+        out.append({
+            "id": str(s.id),
+            "title": title or f"Conversation {str(s.id)[:8]}",
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+            "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+        })
+    await db.flush()
+    return {"data": out}
 
 
 # --- GET /conversation/{session_id} ---
