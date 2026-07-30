@@ -14,6 +14,20 @@ PIPELINE_STAGES = [
     "rejected",
 ]
 
+def _extract_skill_names(skills) -> list[str]:
+    """Extract list of skill string names whether skills are dicts or strings."""
+    names = []
+    for s in skills:
+        if isinstance(s, dict):
+            val = s.get("name") or s.get("skill_name") or s.get("title") or ""
+            if val:
+                names.append(str(val))
+        elif isinstance(s, str) and s.strip():
+            names.append(s.strip())
+        elif s:
+            names.append(str(s))
+    return names
+
 def render_pipeline_view(client: APIClient):
     """Render Candidate Pipeline view."""
     st.header("📊 Candidate Pipeline")
@@ -56,23 +70,24 @@ def render_pipeline_view(client: APIClient):
         company = cand.get("current_employer", "")
         clocation = cand.get("location", "")
         cstatus = str(cand.get("status", "sourced"))
-        cskills = cand.get("skills", [])
+        skill_names = _extract_skill_names(cand.get("skills", []))
 
         sub_info = " | ".join(filter(None, [ctitle, company, clocation]))
 
         with st.container(border=True):
-            cols = st.columns([3, 2, 2])
+            cols = st.columns([3, 2.5, 2])
             with cols[0]:
                 st.markdown(f"**👤 {cname}**")
                 if sub_info:
                     st.markdown(f"💼 *{sub_info}*")
                 st.caption(f"📧 {cemail}")
-                if cskills:
-                    st.markdown(f"**Skills:** `{', '.join(cskills[:4])}`")
+                if skill_names:
+                    st.markdown(f"**Skills:** `{', '.join(skill_names[:4])}`")
             with cols[1]:
                 st.markdown(f"**Status:** `{cstatus.upper()}`")
-                if st.button("💼 Search Related Jobs", key=f"btn_jobs_{cid}", type="secondary", use_container_width=True):
-                    skills_str = f" with skills: {', '.join(cskills[:3])}" if cskills else ""
+                st.write("")
+                if st.button("💼 Search Related Jobs", key=f"btn_jobs_{cid}", type="primary", use_container_width=True):
+                    skills_str = f" with skills: {', '.join(skill_names[:3])}" if skill_names else ""
                     prompt = f"Search active job requisitions and match suitable open roles for candidate {cname} ({ctitle}){skills_str}"
                     st.session_state["pending_prompt"] = prompt
                     st.session_state["switch_tab"] = "💬 Conversations"
@@ -89,7 +104,7 @@ def render_pipeline_view(client: APIClient):
                     key=f"stage_select_{cid}",
                 )
                 if new_status.lower() != cstatus.lower():
-                    if st.button("Update Stage", key=f"btn_update_{cid}", type="primary"):
+                    if st.button("Update Stage", key=f"btn_update_{cid}", type="secondary"):
                         success = client.update_candidate_status(cid, new_status.lower())
                         if success:
                             st.success(f"Updated {cname} status to {new_status}!")
