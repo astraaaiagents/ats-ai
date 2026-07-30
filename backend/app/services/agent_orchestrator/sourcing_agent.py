@@ -9,6 +9,7 @@ Returns ranked candidate profiles with fit metadata for the Orchestrator.
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Any
 
 from sqlalchemy import func, select, text
@@ -177,8 +178,14 @@ async def _fts_search(
     if not sanitized:
         return []
 
-    bind = db.get_bind()
-    is_postgres = bind.dialect.name == "postgresql"
+    is_postgres = False
+    try:
+        bind = db.get_bind()
+        dialect = getattr(bind, "dialect", None)
+        if dialect and getattr(dialect, "name", "") == "postgresql":
+            is_postgres = True
+    except Exception:
+        is_postgres = False
 
     if is_postgres:
         ts_query_str = " | ".join(sanitized)
