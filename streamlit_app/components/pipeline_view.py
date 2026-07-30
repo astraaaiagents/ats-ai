@@ -89,9 +89,10 @@ def render_pipeline_view(client: APIClient):
                 if st.button("💼 Search Related Jobs", key=f"btn_jobs_{cid}", type="primary", use_container_width=True):
                     skills_str = f" with skills: {', '.join(skill_names[:3])}" if skill_names else ""
                     prompt = f"Search active job requisitions and match suitable open roles for candidate {cname} ({ctitle}){skills_str}"
+                    st.session_state["session_id"] = None
+                    st.session_state["messages"] = []
                     st.session_state["pending_prompt"] = prompt
                     st.session_state["switch_tab"] = "💬 Conversations"
-                    st.session_state["active_tab"] = "💬 Conversations"
                     st.session_state["view_mode"] = "chat"
                     st.rerun()
 

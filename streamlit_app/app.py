@@ -37,30 +37,23 @@ def main():
     if "switch_tab" in st.session_state:
         target_tab = st.session_state.pop("switch_tab")
         if target_tab in TABS:
-            st.session_state["active_tab"] = target_tab
-            st.session_state["nav_segmented_control"] = target_tab
+            st.session_state["nav_tab"] = target_tab
 
-    if "active_tab" not in st.session_state or st.session_state["active_tab"] not in TABS:
-        st.session_state["active_tab"] = "💬 Conversations"
-
-    if "nav_segmented_control" not in st.session_state:
-        st.session_state["nav_segmented_control"] = st.session_state["active_tab"]
+    if "nav_tab" not in st.session_state or st.session_state["nav_tab"] not in TABS:
+        st.session_state["nav_tab"] = "💬 Conversations"
 
     render_sidebar(client)
 
-    # Top-level Portal Tab Navigation
-    selected_tab = st.segmented_control(
+    # Top-level Portal Tab Navigation (single source of truth key: nav_tab)
+    st.segmented_control(
         "Portal Navigation",
         options=TABS,
         selection_mode="single",
-        key="nav_segmented_control",
+        key="nav_tab",
         label_visibility="collapsed",
     )
 
-    if selected_tab:
-        st.session_state["active_tab"] = selected_tab
-
-    active = st.session_state.get("active_tab", "💬 Conversations")
+    active = st.session_state["nav_tab"]
 
     if active == "💬 Conversations":
         render_chat_view(client)

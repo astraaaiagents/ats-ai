@@ -10,7 +10,6 @@ STARTER_PROMPTS = [
 def _navigate_to_chat():
     """Helper to request active portal tab switch to Conversations & Chat view."""
     st.session_state["switch_tab"] = "💬 Conversations"
-    st.session_state["active_tab"] = "💬 Conversations"
     st.session_state["view_mode"] = "chat"
 
 def render_sidebar(client: APIClient):
@@ -43,10 +42,13 @@ def render_sidebar(client: APIClient):
     if not sessions:
         st.sidebar.info("No active conversation history")
 
+    active_sid = st.session_state.get("session_id")
+    current_tab = st.session_state.get("nav_tab")
+
     for s in sessions:
         sid = s["id"]
         title = s.get("title") or f"Session {sid[:8]}"
-        is_active = st.session_state.get("session_id") == sid and st.session_state.get("active_tab") == "💬 Conversations"
+        is_active = active_sid == sid and current_tab == "💬 Conversations"
         btn_label = f"💬 {title[:20]}" if not is_active else f"👉 {title[:20]}"
 
         col_chat, col_del = st.sidebar.columns([4, 1])
