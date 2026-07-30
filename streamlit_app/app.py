@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# Ensure project root is in sys.path when running 'streamlit run streamlit_app/app.py'
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import streamlit as st
 from streamlit_app.api_client import APIClient
 from streamlit_app.components.sidebar import render_sidebar
@@ -5,6 +13,7 @@ from streamlit_app.components.chat_view import render_chat_view
 from streamlit_app.components.feed_view import render_feed_view
 from streamlit_app.components.pipeline_view import render_pipeline_view
 from streamlit_app.components.preferences_view import render_preferences_view
+
 
 st.set_page_config(
     page_title="ATS AI - Recruiter Portal",
