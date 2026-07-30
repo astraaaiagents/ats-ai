@@ -86,9 +86,18 @@ async def search_candidates(
     return enriched
 
 
+def _ensure_uuid(val: Any) -> Any:
+    if isinstance(val, str):
+        try:
+            return uuid.UUID(val)
+        except ValueError:
+            return val
+    return val
+
+
 async def _structured_search(
     db: AsyncSession,
-    org_id: str,
+    org_id: Any,
     keywords: list[str],
     limit: int,
 ) -> list[tuple[Candidate, float]]:
@@ -100,6 +109,8 @@ async def _structured_search(
     from sqlalchemy import or_
     from app.models.candidate import Candidate
     from app.models.candidate_skill import CandidateSkill
+
+    org_id = _ensure_uuid(org_id)
 
     if not keywords:
         # No keywords — return all candidates (low score)
@@ -142,7 +153,7 @@ async def _structured_search(
 
 async def _fts_search(
     db: AsyncSession,
-    org_id: str,
+    org_id: Any,
     query: str,
     limit: int,
 ) -> list[tuple[Candidate, float]]:
@@ -155,6 +166,8 @@ async def _fts_search(
     from sqlalchemy import or_
     from app.models.candidate import Candidate
     from app.models.candidate_skill import CandidateSkill
+
+    org_id = _ensure_uuid(org_id)
 
     keywords = _extract_keywords(query)
     if not keywords:
@@ -226,7 +239,7 @@ async def _fts_search(
 
 async def _vector_search(
     db: AsyncSession,
-    org_id: str,
+    org_id: Any,
     query: str,
     limit: int,
 ) -> list[tuple[Candidate, float]]:
@@ -240,6 +253,8 @@ async def _vector_search(
     from sqlalchemy import or_
     from app.models.candidate import Candidate
     from app.models.candidate_skill import CandidateSkill
+
+    org_id = _ensure_uuid(org_id)
 
     keywords = _extract_keywords(query)
     if not keywords:
@@ -423,7 +438,7 @@ async def _enrich_candidates(
     return enriched
 
 
-async def get_job_details(db: AsyncSession, org_id: str, job_id: str) -> dict[str, Any] | None:
+async def get_job_details(db: AsyncSession, org_id: Any, job_id: Any) -> dict[str, Any] | None:
     """Fetch full job requisition details for context-aware sourcing.
 
     Queries the client_contacts table for job requisitions.
@@ -439,6 +454,9 @@ async def get_job_details(db: AsyncSession, org_id: str, job_id: str) -> dict[st
         Returns None if job not found.
     """
     from app.models.client_contact import ClientContact
+
+    org_id = _ensure_uuid(org_id)
+    job_id = _ensure_uuid(job_id)
 
     result = await db.execute(
         select(ClientContact).where(
